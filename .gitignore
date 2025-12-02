@@ -7,5 +7,4 @@ env/
 venv/
 .DS_Store
 *.log
-server/TrainingImage/
-*.pkl
+server/trained_model.pkl

@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="utf-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+	<meta name="description" content="Face Attendance Management System">
+	<meta name="author" content="AdminKit">
+	<meta name="keywords" content="face, attendance, student, management">
+
+	<link rel="preconnect" href="https://fonts.gstatic.com">
+	<link rel="shortcut icon" href="img/icons/icon-48x48.png" />
+
+	<title>Dashboard - Face Attendance System</title>
+
+	<link href="css/app.css" rel="stylesheet">
+	<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+	
+	<!-- Authentication Script -->
+	<script>
+	// Check authentication on page load
+	document.addEventListener('DOMContentLoaded', function() {
+		checkAuth();
+		setupLogout();
+	});
+
+	async function checkAuth() {
+		try {
+			const response = await fetch("/api/check-session");
+			const result = await response.json();
+			
+			if (!result.logged_in) {
+				// Redirect to login page
+				window.location.href = "/sign-in";
+			} else {
+				// User is logged in, show their name
+				if (result.user && result.user.full_name) {
+					const userElement = document.querySelector('.nav-link.dropdown-toggle .text-dark');
+					if (userElement) {
+						userElement.textContent = result.user.full_name;
+					}
+					
+					// Update profile image alt text
+					const profileImg = document.querySelector('.avatar');
+					if (profileImg) {
+						profileImg.alt = result.user.full_name;
+					}
+				}
+				
+				// Update dashboard title
+				const dashboardTitle = document.querySelector('h1.h3.mb-3');
+				if (dashboardTitle && result.user) {
+					dashboardTitle.innerHTML = `<strong>Welcome, ${result.user.full_name || result.user.username}</strong> Dashboard`;
+				}
+			}
+		} catch (error) {
+			console.error("Auth check error:", error);
+			window.location.href = "/sign-in";
+		}
+	}
+
+	// Add logout functionality
+	function setupLogout() {
+		const logoutLink = document.querySelector('a.dropdown-item[href="#"]:last-child');
+		if (logoutLink && logoutLink.textContent.trim() === "Log out") {
+			logoutLink.addEventListener('click', async function(e) {
+				e.preventDefault();
+				
+				try {
+					await fetch("/logout");
+					window.location.href = "/sign-in";
+				} catch (error) {
+					console.error("Logout error:", error);
+					window.location.href = "/sign-in";
+				}
+			});
+		}
+		
+		// Also add logout to any other logout buttons
+		const allLogoutButtons = document.querySelectorAll('a[href*="logout"], a:contains("Log out")');
+		allLogoutButtons.forEach(btn => {
+			btn.addEventListener('click', async function(e) {
+				e.preventDefault();
+				await fetch("/logout");
+				window.location.href = "/sign-in";
+			});
+		});
+	}
+	</script>
+</head>
+
+<body>
+	<div class="wrapper">
+		<nav id="sidebar" class="sidebar js-sidebar">
+			<div class="sidebar-content js-simplebar">
+				<a class="sidebar-brand" href="/dashboard">
+          <span class="align-middle">Face Attendance</span>
+        </a>
+
+				<ul class="sidebar-nav">
+					<li class="sidebar-header">
+						Navigation
+					</li>
+
+					<li class="sidebar-item active">
+						<a class="sidebar-link" href="/dashboard">
+              <i class="align-middle" data-feather="sliders"></i> <span class="align-middle">Dashboard</span>
+            </a>
+					</li>
+
+					<li class="sidebar-item">
+						<a class="sidebar-link" href="/register-student">
+              <i class="align-middle" data-feather="user"></i> <span class="align-middle">Register Student</span>
+            </a>
+					</li>
+
+					<li class="sidebar-item">
+						<a class="sidebar-link" href="/view-students">
+              <i class="align-middle" data-feather="users"></i> <span class="align-middle">View Students</span>
+            </a>
+					</li>
+
+					<li class="sidebar-item">
+						<a class="sidebar-link" href="/mark-attendance">
+							<i class="align-middle" data-feather="check-square"></i> 
+							<span class="align-middle">Mark Attendance</span>
+						</a>
+					</li>
+
+					<li class="sidebar-item">
+						<a class="sidebar-link" href="/sign-in">
+							<i class="align-middle" data-feather="log-out"></i> <span class="align-middle">Logout</span>
+						</a>
+					</li>
+				</ul>
+			</div>
+		</nav>
+
+		<div class="main">
+			<nav class="navbar navbar-expand navbar-light navbar-bg">
+				<a class="sidebar-toggle js-sidebar-toggle">
+          <i class="hamburger align-self-center"></i>
+        </a>
+
+				<div class="navbar-collapse collapse">
+					<ul class="navbar-nav navbar-align">
+						<!-- Notifications dropdown -->
+						<li class="nav-item dropdown">
+							<a class="nav-icon dropdown-toggle" href="#" id="alertsDropdown" data-bs-toggle="dropdown">
+								<!-- <div class="position-relative">
+									<i class="align-middle" data-feather="bell"></i>
+									<span class="indicator">0</span>
+								</div> -->
+							</a>
+							<div class="dropdown-menu dropdown-menu-lg dropdown-menu-end py-0" aria-labelledby="alertsDropdown">
+								<div class="dropdown-menu-header">
+									System Notifications
+								</div>
+								<div class="list-group">
+									<div class="list-group-item">
+										<div class="row g-0 align-items-center">
+											<div class="col-10">
+												<div class="text-dark">System Ready</div>
+												<div class="text-muted small mt-1">Face Attendance System is running</div>
+											</div>
+										</div>
+									</div>
+								</div>
+								<div class="dropdown-menu-footer">
+									<a href="#" class="text-muted">Clear all</a>
+								</div>
+							</div>
+						</li>
+						
+						<!-- User profile dropdown -->
+						<!-- <li class="nav-item dropdown"> -->
+							<!-- <a class="nav-link dropdown-toggle d-none d-sm-inline-block" href="#" data-bs-toggle="dropdown"> -->
+                <!-- <img src="img/avatars/avatar.jpg" class="avatar img-fluid rounded me-1" alt="User" />  -->
+                <!-- <span class="text-dark" id="userName">Loading...</span>
+              </a> -->
+							<!-- <div class="dropdown-menu dropdown-menu-end">
+								<a class="dropdown-item" href="#"><i class="align-middle me-1" data-feather="user"></i> Profile</a>
+								<a class="dropdown-item" href="#"><i class="align-middle me-1" data-feather="settings"></i> Settings</a>
+								<div class="dropdown-divider"></div>
+								<a class="dropdown-item" href="#" id="logoutBtn"><i class="align-middle me-1" data-feather="log-out"></i> Logout</a>
+							</div> -->
+						<!-- </li> -->
+					</ul>
+				</div>
+			</nav>
+
+			<main class="content">
+				<div class="container-fluid p-0">
+					<h1 class="h3 mb-3"><strong>Face Attendance</strong> Dashboard</h1>
+
+					<!-- System Stats -->
+					<div class="row">
+						<div class="col-xl-3 col-sm-6 col-12">
+							<div class="card">
+								<div class="card-body">
+									<div class="d-flex justify-content-between">
+										<div>
+											<h6 class="text-muted fw-normal mt-0">Total Students</h6>
+											<h3 id="totalStudents">0</h3>
+										</div>
+										<div class="align-self-center">
+											<i class="align-middle text-primary" data-feather="users" style="width: 40px; height: 40px;"></i>
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+						
+						<div class="col-xl-3 col-sm-6 col-12">
+							<div class="card">
+								<div class="card-body">
+									<div class="d-flex justify-content-between">
+										<div>
+											<h6 class="text-muted fw-normal mt-0">Today's Attendance</h6>
+											<h3 id="todayAttendance">0</h3>
+										</div>
+										<div class="align-self-center">
+											<i class="align-middle text-success" data-feather="check-circle" style="width: 40px; height: 40px;"></i>
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+						
+						<div class="col-xl-3 col-sm-6 col-12">
+							<div class="card">
+								<div class="card-body">
+									<div class="d-flex justify-content-between">
+										<div>
+											<h6 class="text-muted fw-normal mt-0">Face Encodings</h6>
+											<h3 id="faceEncodings">0</h3>
+										</div>
+										<div class="align-self-center">
+											<i class="align-middle text-warning" data-feather="smile" style="width: 40px; height: 40px;"></i>
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+						
+						<div class="col-xl-3 col-sm-6 col-12">
+							<div class="card">
+								<div class="card-body">
+									<div class="d-flex justify-content-between">
+										<div>
+											<h6 class="text-muted fw-normal mt-0">System Status</h6>
+											<h3 id="systemStatus">Active</h3>
+										</div>
+										<div class="align-self-center">
+											<i class="align-middle text-info" data-feather="server" style="width: 40px; height: 40px;"></i>
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+
+					<!-- Quick Actions -->
+					<div class="row">
+						<div class="col-12">
+							<div class="card">
+								<div class="card-header">
+									<h5 class="card-title mb-0">Quick Actions</h5>
+								</div>
+								<div class="card-body">
+									<div class="row">
+										<div class="col-md-3 col-sm-6 mb-3">
+											<a href="/register-student" class="btn btn-primary w-100">
+												<i class="align-middle me-1" data-feather="user-plus"></i> Register Student
+											</a>
+										</div>
+										<div class="col-md-3 col-sm-6 mb-3">
+											<a href="/mark-attendance" class="btn btn-success w-100">
+												<i class="align-middle me-1" data-feather="check-square"></i> Mark Attendance
+											</a>
+										</div>
+										<div class="col-md-3 col-sm-6 mb-3">
+											<a href="/view-students" class="btn btn-info w-100">
+												<i class="align-middle me-1" data-feather="users"></i> View Students
+											</a>
+										</div>
+										<div class="col-md-3 col-sm-6 mb-3">
+											<button class="btn btn-warning w-100" onclick="retrainModel()">
+												<i class="align-middle me-1" data-feather="refresh-cw"></i> Retrain Model
+											</button>
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+
+					<!-- Recent Activity -->
+					<div class="row">
+						<div class="col-12">
+							<div class="card">
+								<div class="card-header">
+									<h5 class="card-title mb-0">Recent Attendance</h5>
+								</div>
+								<div class="card-body">
+									<div class="table-responsive">
+										<table class="table table-hover" id="recentAttendance">
+											<thead>
+												<tr>
+													<th>Student</th>
+													<th>Enrollment</th>
+													<th>Subject</th>
+													<th>Time</th>
+													<th>Confidence</th>
+												</tr>
+											</thead>
+											<tbody>
+												<tr>
+													<td colspan="5" class="text-center">Loading...</td>
+												</tr>
+											</tbody>
+										</table>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</main>
+
+			<footer class="footer">
+				<div class="container-fluid">
+					<div class="row text-muted">
+						<div class="col-6 text-start">
+							<p class="mb-0">
+								<strong>Face Attendance System</strong> © 2025
+							</p>
+						</div>
+						<div class="col-6 text-end">
+							<ul class="list-inline">
+								<li class="list-inline-item">
+									<a href="#" class="text-muted">Help</a>
+								</li>
+								<li class="list-inline-item">
+									<a href="#" class="text-muted">Privacy</a>
+								</li>
+							</ul>
+						</div>
+					</div>
+				</div>
+			</footer>
+		</div>
+	</div>
+
+	<script src="js/app.js"></script>
+	<script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
+	
+	<!-- Authentication Script -->
+<script>
+// Check authentication on page load
+document.addEventListener('DOMContentLoaded', function() {
+    checkAuth();
+    setupSidebarLogout();
+    loadDashboardData();
+});
+
+async function checkAuth() {
+    try {
+        const response = await fetch("/api/check-session");
+        const result = await response.json();
+        
+        if (!result.logged_in) {
+            // Redirect to login page
+            window.location.href = "/sign-in";
+        } else {
+            // User is logged in, show their name
+            if (result.user && result.user.full_name) {
+                const userElement = document.getElementById('userName');
+                if (userElement) {
+                    userElement.textContent = result.user.full_name;
+                }
+                
+                // Update dashboard title
+                const dashboardTitle = document.querySelector('h1.h3.mb-3');
+                if (dashboardTitle && result.user) {
+                    dashboardTitle.innerHTML = `<strong>Welcome, ${result.user.full_name || result.user.username}</strong> Dashboard`;
+                }
+            }
+        }
+    } catch (error) {
+        console.error("Auth check error:", error);
+        window.location.href = "/sign-in";
+    }
+}
+
+// Setup sidebar logout functionality
+function setupSidebarLogout() {
+    // Find the sidebar logout link (the one with href="/sign-in" and text "Logout")
+    const sidebarLogoutLink = document.querySelector('a.sidebar-link[href="/sign-in"]');
+    
+    if (sidebarLogoutLink) {
+        sidebarLogoutLink.addEventListener('click', async function(e) {
+            e.preventDefault();
+            
+            try {
+                // Call logout API
+                await fetch("/logout");
+                // Redirect to sign-in page
+                window.location.href = "/sign-in";
+            } catch (error) {
+                console.error("Logout error:", error);
+                // Still redirect to sign-in page even if API call fails
+                window.location.href = "/sign-in";
+            }
+        });
+    }
+    
+    // Also setup any other logout buttons
+    const logoutButtons = document.querySelectorAll('#logoutBtn, a[href="/logout"]');
+    logoutButtons.forEach(btn => {
+        btn.addEventListener('click', async function(e) {
+            e.preventDefault();
+            try {
+                await fetch("/logout");
+                window.location.href = "/sign-in";
+            } catch (error) {
+                window.location.href = "/sign-in";
+            }
+        });
+    });
+}
+
+// Load dashboard data
+async function loadDashboardData() {
+    try {
+        console.log("Loading dashboard data...");
+        
+        // Load model status
+        const modelResponse = await fetch("/api/model-status");
+        const modelData = await modelResponse.json();
+        console.log("Model Status Response:", modelData);
+        
+        if (modelData.success) {
+            document.getElementById('totalStudents').textContent = modelData.total_students || 0;
+            document.getElementById('faceEncodings').textContent = modelData.total_encodings || 0;
+            
+            const systemStatusElement = document.getElementById('systemStatus');
+            if (modelData.model_exists) {
+                systemStatusElement.textContent = 'Active';
+                systemStatusElement.className = 'text-success';
+            } else {
+                systemStatusElement.textContent = 'Training Needed';
+                systemStatusElement.className = 'text-warning';
+            }
+        } else {
+            console.error("Model status error:", modelData.message);
+        }
+        
+        // Load today's attendance count
+        const today = new Date().toISOString().split('T')[0];
+        console.log("Fetching today's attendance for:", today);
+        const todayResponse = await fetch(`/api/get-attendance?date=${today}`);
+        const todayData = await todayResponse.json();
+        console.log("Today's Attendance Response:", todayData);
+        
+        if (todayData.success) {
+            // Check which field has the count
+            const todayCount = todayData.today_records || todayData.total_records || 0;
+            document.getElementById('todayAttendance').textContent = todayCount;
+            console.log("Today count set to:", todayCount);
+        } else {
+            document.getElementById('todayAttendance').textContent = '0';
+            console.error("Today's attendance error:", todayData.error);
+        }
+        
+        // Load recent attendance (last 5 records)
+        console.log("Fetching recent attendance...");
+        const attendanceResponse = await fetch("/api/get-attendance?limit=5");
+        const attendanceData = await attendanceResponse.json();
+        console.log("Recent Attendance Response:", attendanceData);
+        
+        const tableBody = document.querySelector('#recentAttendance tbody');
+        
+        if (attendanceData.success && attendanceData.attendance && attendanceData.attendance.length > 0) {
+            console.log("Found", attendanceData.attendance.length, "attendance records");
+            tableBody.innerHTML = '';
+            
+            attendanceData.attendance.forEach((record, index) => {
+                console.log(`Record ${index + 1}:`, record);
+                
+                const row = document.createElement('tr');
+                
+                // Format confidence badge
+                let badgeClass = 'bg-secondary';
+                let confidencePercent = 'N/A';
+                
+                if (record.confidence !== undefined && record.confidence !== null) {
+                    confidencePercent = (record.confidence * 100).toFixed(1) + '%';
+                    if (record.confidence > 0.8) {
+                        badgeClass = 'bg-success';
+                    } else if (record.confidence > 0.6) {
+                        badgeClass = 'bg-warning';
+                    } else {
+                        badgeClass = 'bg-danger';
+                    }
+                }
+                
+                row.innerHTML = `
+                    <td>${record.student_name || 'Unknown'}</td>
+                    <td>${record.enrollment_number || 'N/A'}</td>
+                    <td>${record.subject || 'General'}</td>
+                    <td>${record.time || 'N/A'}</td>
+                    <td><span class="badge ${badgeClass}">${confidencePercent}</span></td>
+                `;
+                tableBody.appendChild(row);
+            });
+        } else {
+            console.log("No attendance records found");
+            // Show empty state
+            tableBody.innerHTML = `
+                <tr>
+                    <td colspan="5" class="text-center text-muted py-4">
+                        <i data-feather="calendar" style="width: 48px; height: 48px;"></i>
+                        <p class="mt-2">No attendance records yet</p>
+                        <small class="text-muted">Mark attendance to see records here</small>
+                    </td>
+                </tr>
+            `;
+        }
+        
+        // Initialize feather icons
+        if (typeof feather !== 'undefined') {
+            feather.replace();
+        }
+        
+        console.log("Dashboard data loaded successfully!");
+        
+    } catch (error) {
+        console.error("Error loading dashboard data:", error);
+        
+        // Show error state in table
+        const tableBody = document.querySelector('#recentAttendance tbody');
+        tableBody.innerHTML = `
+            <tr>
+                <td colspan="5" class="text-center text-danger py-4">
+                    <i data-feather="alert-triangle" style="width: 48px; height: 48px;"></i>
+                    <p class="mt-2">Error loading attendance data</p>
+                    <small class="text-danger">${error.message}</small>
+                </td>
+            </tr>
+        `;
+        
+        // Set default values
+        document.getElementById('totalStudents').textContent = 'Error';
+        document.getElementById('todayAttendance').textContent = 'Error';
+        document.getElementById('faceEncodings').textContent = 'Error';
+        document.getElementById('systemStatus').textContent = 'Error';
+        document.getElementById('systemStatus').className = 'text-danger';
+        
+        if (typeof feather !== 'undefined') {
+            feather.replace();
+        }
+    }
+}
+
+// Retrain model function
+async function retrainModel() {
+    try {
+        const response = await fetch("/api/retrain-model", {
+            method: "POST"
+        });
+        const result = await response.json();
+        
+        if (result.success) {
+            alert(`Model retrained successfully with ${result.total_encodings} encodings`);
+            loadDashboardData(); // Refresh data
+        } else {
+            alert("Failed to retrain model: " + result.message);
+        }
+    } catch (error) {
+        console.error("Retrain error:", error);
+        alert("Error retraining model");
+    }
+}
+
+// Auto refresh data every 30 seconds
+setInterval(loadDashboardData, 30000);
+</script>
+</body>
+</html>

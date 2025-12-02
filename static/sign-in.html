@@ -1,0 +1,880 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="description" content="Sign In - Student Management System">
+    <meta name="author" content="AdminKit">
+    <meta name="keywords" content="login, sign in, authentication, admin">
+
+    <link rel="preconnect" href="https://fonts.gstatic.com">
+    <link rel="shortcut icon" href="img/icons/icon-48x48.png" />
+
+    <title>Sign In - Face Attendance System</title>
+
+    <link href="css/app.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        .login-container {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+        }
+        
+        .login-card {
+            background-color: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            width: 100%;
+            max-width: 400px;
+            overflow: hidden;
+            animation: slideUp 0.5s ease-out;
+        }
+        
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .login-header {
+            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+            color: white;
+            padding: 40px 30px;
+            text-align: center;
+        }
+        
+        .login-logo {
+            width: 80px;
+            height: 80px;
+            background-color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        
+        .login-logo i {
+            color: #4f46e5;
+            width: 40px;
+            height: 40px;
+        }
+        
+        .login-header h1 {
+            font-size: 1.8rem;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+        
+        .login-header p {
+            opacity: 0.9;
+            font-size: 0.95rem;
+        }
+        
+        .login-body {
+            padding: 40px 30px;
+        }
+        
+        .form-group {
+            margin-bottom: 25px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #4a5568;
+            font-size: 0.9rem;
+        }
+        
+        .input-group {
+            position: relative;
+        }
+        
+        .input-group input {
+            width: 100%;
+            padding: 12px 45px 12px 15px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: all 0.3s;
+            background-color: white;
+        }
+        
+        .input-group input:focus {
+            outline: none;
+            border-color: #4f46e5;
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        }
+        
+        .input-group input.error {
+            border-color: #f56565;
+        }
+        
+        .input-group .input-icon {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #a0aec0;
+        }
+        
+        .password-toggle {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: #a0aec0;
+            cursor: pointer;
+            padding: 5px;
+        }
+        
+        .password-toggle:hover {
+            color: #4a5568;
+        }
+        
+        .remember-forgot {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            font-size: 0.9rem;
+        }
+        
+        .remember-me {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .remember-me input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+            accent-color: #4f46e5;
+        }
+        
+        .forgot-password {
+            color: #4f46e5;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        
+        .forgot-password:hover {
+            text-decoration: underline;
+        }
+        
+        .login-button {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-bottom: 20px;
+        }
+        
+        .login-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(79, 70, 229, 0.3);
+        }
+        
+        .login-button:active {
+            transform: translateY(0);
+        }
+        
+        .login-button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        .divider {
+            text-align: center;
+            position: relative;
+            margin: 25px 0;
+            color: #a0aec0;
+            font-size: 0.9rem;
+        }
+        
+        .divider::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 50%;
+            width: 45%;
+            height: 1px;
+            background-color: #e2e8f0;
+        }
+        
+        .divider::after {
+            content: '';
+            position: absolute;
+            right: 0;
+            top: 50%;
+            width: 45%;
+            height: 1px;
+            background-color: #e2e8f0;
+        }
+        
+        .social-login {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+        
+        .social-btn {
+            flex: 1;
+            padding: 12px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            background: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            font-weight: 500;
+            color: #4a5568;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .social-btn:hover {
+            border-color: #4f46e5;
+            color: #4f46e5;
+        }
+        
+        .social-btn i {
+            width: 18px;
+            height: 18px;
+        }
+        
+        .signup-link {
+            text-align: center;
+            color: #4a5568;
+            font-size: 0.9rem;
+        }
+        
+        .signup-link a {
+            color: #4f46e5;
+            font-weight: 600;
+            text-decoration: none;
+        }
+        
+        .signup-link a:hover {
+            text-decoration: underline;
+        }
+        
+        .error-message {
+            background-color: #fed7d7;
+            color: #742a2a;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 0.9rem;
+            display: none;
+            animation: fadeIn 0.3s;
+        }
+        
+        .success-message {
+            background-color: #c6f6d5;
+            color: #22543d;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 0.9rem;
+            display: none;
+            animation: fadeIn 0.3s;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        .loading-spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s linear infinite;
+            margin-right: 10px;
+            vertical-align: middle;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .system-info {
+            background-color: #f8fafc;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 20px;
+            border: 1px solid #e2e8f0;
+            font-size: 0.85rem;
+            color: #718096;
+        }
+        
+        .system-info h4 {
+            margin: 0 0 10px 0;
+            color: #4a5568;
+            font-size: 0.9rem;
+        }
+        
+        .system-info ul {
+            margin: 0;
+            padding-left: 20px;
+        }
+        
+        .system-info li {
+            margin-bottom: 5px;
+        }
+        
+        .demo-credentials {
+            background-color: #e6fffa;
+            border: 1px solid #81e6d9;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 20px;
+            font-size: 0.85rem;
+            color: #234e52;
+        }
+        
+        .demo-credentials h4 {
+            margin: 0 0 10px 0;
+            color: #234e52;
+            font-size: 0.9rem;
+        }
+        
+        .demo-credentials p {
+            margin: 5px 0;
+        }
+        
+        .demo-credentials strong {
+            font-weight: 600;
+        }
+        
+        @media (max-width: 480px) {
+            .login-container {
+                padding: 10px;
+            }
+            
+            .login-card {
+                max-width: 100%;
+            }
+            
+            .login-header {
+                padding: 30px 20px;
+            }
+            
+            .login-body {
+                padding: 30px 20px;
+            }
+            
+            .social-login {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="login-container">
+        <div class="login-card">
+            <div class="login-header">
+                <div class="login-logo">
+                    <i data-feather="lock"></i>
+                </div>
+                <h1>Welcome Back</h1>
+                <p>Sign in to your Face Attendance System</p>
+            </div>
+            
+            <div class="login-body">
+                <div id="errorMessage" class="error-message">
+                    <i data-feather="alert-circle"></i> <span id="errorText"></span>
+                </div>
+                
+                <div id="successMessage" class="success-message">
+                    <i data-feather="check-circle"></i> <span id="successText"></span>
+                </div>
+                
+                <form id="loginForm">
+                    <div class="form-group">
+                        <label for="username">Username or Email</label>
+                        <div class="input-group">
+                            <input type="text" id="username" name="username" placeholder="Enter your username or email" required>
+                            <div class="input-icon">
+                                <i data-feather="user"></i>
+                            </div>
+                        </div>
+                        <div id="usernameError" class="error-message" style="display: none; margin-top: 5px; padding: 8px; font-size: 0.8rem;"></div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="password">Password</label>
+                        <div class="input-group">
+                            <input type="password" id="password" name="password" placeholder="Enter your password" required>
+                            <button type="button" class="password-toggle" id="togglePassword">
+                                <i data-feather="eye"></i>
+                            </button>
+                        </div>
+                        <div id="passwordError" class="error-message" style="display: none; margin-top: 5px; padding: 8px; font-size: 0.8rem;"></div>
+                    </div>
+                    
+                    <div class="remember-forgot">
+                        <div class="remember-me">
+                            <input type="checkbox" id="rememberMe" name="rememberMe">
+                            <label for="rememberMe">Remember me</label>
+                        </div>
+                        <a href="#" id="forgotPassword" class="forgot-password">Forgot password?</a>
+                    </div>
+                    
+                    <button type="submit" class="login-button" id="loginButton">
+                        <span id="loginButtonText">Sign In</span>
+                    </button>
+                </form>
+                
+
+              
+            </div>
+        </div>
+    </div>
+    
+
+    <script src="js/app.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize feather icons
+            feather.replace();
+            
+            // DOM Elements
+            const loginForm = document.getElementById('loginForm');
+            const usernameInput = document.getElementById('username');
+            const passwordInput = document.getElementById('password');
+            const togglePasswordBtn = document.getElementById('togglePassword');
+            const loginButton = document.getElementById('loginButton');
+            const loginButtonText = document.getElementById('loginButtonText');
+            const errorMessage = document.getElementById('errorMessage');
+            const errorText = document.getElementById('errorText');
+            const successMessage = document.getElementById('successMessage');
+            const successText = document.getElementById('successText');
+            const usernameError = document.getElementById('usernameError');
+            const passwordError = document.getElementById('passwordError');
+            const forgotPasswordLink = document.getElementById('forgotPassword');
+            const signupLink = document.getElementById('signupLink');
+            const googleLoginBtn = document.getElementById('googleLogin');
+            const microsoftLoginBtn = document.getElementById('microsoftLogin');
+            const rememberMeCheckbox = document.getElementById('rememberMe');
+            
+            // Toggle password visibility
+            let passwordVisible = false;
+            togglePasswordBtn.addEventListener('click', function() {
+                passwordVisible = !passwordVisible;
+                passwordInput.type = passwordVisible ? 'text' : 'password';
+                
+                const eyeIcon = togglePasswordBtn.querySelector('i');
+                eyeIcon.setAttribute('data-feather', passwordVisible ? 'eye-off' : 'eye');
+                feather.replace();
+            });
+            
+            // Validate username
+            usernameInput.addEventListener('input', function() {
+                validateUsername();
+            });
+            
+            // Validate password
+            passwordInput.addEventListener('input', function() {
+                validatePassword();
+            });
+            
+            // Validate username function
+            function validateUsername() {
+                const username = usernameInput.value.trim();
+                usernameError.style.display = 'none';
+                
+                if (username.length === 0) {
+                    showFieldError(usernameError, 'Username or email is required');
+                    return false;
+                }
+                
+                if (username.length < 3) {
+                    showFieldError(usernameError, 'Username must be at least 3 characters');
+                    return false;
+                }
+                
+                return true;
+            }
+            
+            // Validate password function
+            function validatePassword() {
+                const password = passwordInput.value.trim();
+                passwordError.style.display = 'none';
+                
+                if (password.length === 0) {
+                    showFieldError(passwordError, 'Password is required');
+                    return false;
+                }
+                
+                if (password.length < 6) {
+                    showFieldError(passwordError, 'Password must be at least 6 characters');
+                    return false;
+                }
+                
+                return true;
+            }
+            
+            // Show field error
+            function showFieldError(element, message) {
+                element.textContent = message;
+                element.style.display = 'block';
+            }
+            
+            // Show error message
+            function showErrorMessage(message) {
+                errorText.textContent = message;
+                errorMessage.style.display = 'block';
+                successMessage.style.display = 'none';
+                
+                // Auto hide after 5 seconds
+                setTimeout(() => {
+                    errorMessage.style.display = 'none';
+                }, 5000);
+            }
+            
+            // Show success message
+            function showSuccessMessage(message) {
+                successText.textContent = message;
+                successMessage.style.display = 'block';
+                errorMessage.style.display = 'none';
+                
+                // Auto hide after 5 seconds
+                setTimeout(() => {
+                    successMessage.style.display = 'none';
+                }, 5000);
+            }
+            
+            // Form submission
+            loginForm.addEventListener('submit', async function(e) {
+                e.preventDefault();
+
+                // Validate inputs
+                const isUsernameValid = validateUsername();
+                const isPasswordValid = validatePassword();
+
+                if (!isUsernameValid || !isPasswordValid) {
+                    return;
+                }
+
+                // Get form values
+                const username = usernameInput.value.trim();
+                const password = passwordInput.value;
+                const rememberMe = rememberMeCheckbox.checked;
+
+                // Show loading state
+                loginButton.disabled = true;
+                loginButtonText.innerHTML = '<span class="loading-spinner"></span> Signing In...';
+
+                try {
+                    // 🔥 REAL API CALL (Flask backend)
+                    const response = await fetch("/api/login", {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json"
+                        },
+                        body: JSON.stringify({ username, password })
+                    });
+
+                    const result = await response.json();
+
+                    if (result.status === "success") {
+
+                        // Save login state in LocalStorage
+                        saveLoginState(result.user.username, rememberMe);
+
+                        showSuccessMessage("Login successful! Redirecting...");
+
+                        setTimeout(() => {
+                            window.location.href = "/dashboard";
+                        }, 1500);
+
+                    } else {
+                        showErrorMessage(result.message || "Invalid username or password.");
+                        resetLoginButton();
+                    }
+                } catch (error) {
+                    console.error("Login Error:", error);
+                    showErrorMessage("Server error! Please try again later.");
+                    resetLoginButton();
+                }
+            });
+
+            
+            // Authenticate user
+            function authenticateUser(username, password) {
+                // Get stored users from localStorage
+                const storedUsers = localStorage.getItem('systemUsers');
+                let users = [];
+                
+                if (storedUsers) {
+                    users = JSON.parse(storedUsers);
+                } else {
+                    // Create default users if none exist
+                    users = [
+                        {
+                            id: 1,
+                            username: 'admin',
+                            email: 'admin@studentmanagement.com',
+                            password: 'admin123',
+                            role: 'admin',
+                            fullName: 'System Administrator',
+                            department: 'Administration',
+                            lastLogin: null,
+                            createdAt: new Date().toISOString()
+                        },
+                        {
+                            id: 2,
+                            username: 'user',
+                            email: 'user@studentmanagement.com',
+                            password: 'user123',
+                            role: 'user',
+                            fullName: 'Regular User',
+                            department: 'Academic',
+                            lastLogin: null,
+                            createdAt: new Date().toISOString()
+                        }
+                    ];
+                    
+                    // Save default users
+                    localStorage.setItem('systemUsers', JSON.stringify(users));
+                }
+                
+                // Check credentials
+                const user = users.find(u => 
+                    (u.username === username || u.email === username) && 
+                    u.password === password
+                );
+                
+                return user !== undefined;
+            }
+            
+            // Get user data
+            function getUserData(username) {
+                const storedUsers = localStorage.getItem('systemUsers');
+                if (!storedUsers) return null;
+                
+                const users = JSON.parse(storedUsers);
+                return users.find(u => u.username === username || u.email === username);
+            }
+            
+            // Save login state
+            function saveLoginState(username, rememberMe) {
+                const userData = getUserData(username);
+                
+                if (userData) {
+                    // Update last login
+                    userData.lastLogin = new Date().toISOString();
+                    
+                    // Save updated user data
+                    const storedUsers = localStorage.getItem('systemUsers');
+                    if (storedUsers) {
+                        const users = JSON.parse(storedUsers);
+                        const userIndex = users.findIndex(u => u.id === userData.id);
+                        if (userIndex !== -1) {
+                            users[userIndex] = userData;
+                            localStorage.setItem('systemUsers', JSON.stringify(users));
+                        }
+                    }
+                    
+                    // Create session
+                    const sessionData = {
+                        isLoggedIn: true,
+                        user: {
+                            id: userData.id,
+                            username: userData.username,
+                            email: userData.email,
+                            role: userData.role,
+                            fullName: userData.fullName
+                        },
+                        loginTime: new Date().toISOString()
+                    };
+                    
+                    // Save session based on remember me preference
+                    if (rememberMe) {
+                        localStorage.setItem('userSession', JSON.stringify(sessionData));
+                    } else {
+                        sessionStorage.setItem('userSession', JSON.stringify(sessionData));
+                    }
+                    
+                    // Set a cookie for session management (optional)
+                    document.cookie = `sessionToken=${generateToken()}; path=/; ${rememberMe ? 'max-age=2592000' : ''}`;
+                }
+            }
+            
+            // Generate random token
+            function generateToken() {
+                return Math.random().toString(36).substring(2) + Date.now().toString(36);
+            }
+            
+            // Reset login button
+            function resetLoginButton() {
+                loginButton.disabled = false;
+                loginButtonText.textContent = 'Sign In';
+            }
+            
+            // Forgot password functionality
+            forgotPasswordLink.addEventListener('click', function(e) {
+                e.preventDefault();
+                
+                Swal.fire({
+                    title: 'Reset Password',
+                    html: `
+                        <p>Enter your email address and we'll send you a link to reset your password.</p>
+                        <input type="email" id="resetEmail" class="swal2-input" placeholder="Enter your email">
+                    `,
+                    showCancelButton: true,
+                    confirmButtonText: 'Send Reset Link',
+                    cancelButtonText: 'Cancel',
+                    showLoaderOnConfirm: true,
+                    preConfirm: () => {
+                        const email = document.getElementById('resetEmail').value;
+                        
+                        if (!email) {
+                            Swal.showValidationMessage('Please enter your email address');
+                            return false;
+                        }
+                        
+                        if (!validateEmail(email)) {
+                            Swal.showValidationMessage('Please enter a valid email address');
+                            return false;
+                        }
+                        
+                        // Simulate sending reset email
+                        return new Promise(resolve => {
+                            setTimeout(() => {
+                                resolve({ email: email, sent: true });
+                            }, 1500);
+                        });
+                    },
+                    allowOutsideClick: () => !Swal.isLoading()
+                }).then((result) => {
+                    if (result.isConfirmed && result.value.sent) {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Email Sent!',
+                            text: `Password reset link has been sent to ${result.value.email}`,
+                            timer: 3000,
+                            showConfirmButton: false
+                        });
+                    }
+                });
+            });
+            
+            // Email validation
+            function validateEmail(email) {
+                const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                return re.test(email);
+            }
+            
+            // Sign up link (Contact Admin)
+            signupLink.addEventListener('click', function(e) {
+                e.preventDefault();
+                
+                Swal.fire({
+                    title: 'Request Access',
+                    html: `
+                        <p>To request access to the Student Management System, please contact the system administrator:</p>
+                        <div style="text-align: left; margin-top: 15px;">
+                            <p><strong>Email:</strong> admin@studentmanagement.com</p>
+                            <p><strong>Phone:</strong> +1 (555) 123-4567</p>
+                            <p><strong>Office:</strong> Administration Building, Room 101</p>
+                        </div>
+                    `,
+                    icon: 'info',
+                    confirmButtonText: 'OK',
+                    confirmButtonColor: '#4f46e5'
+                });
+            });
+            
+            // Social login buttons (demo functionality)
+            googleLoginBtn.addEventListener('click', function() {
+                Swal.fire({
+                    title: 'Google Sign In',
+                    text: 'This feature is for demonstration purposes. In a real application, this would integrate with Google OAuth.',
+                    icon: 'info',
+                    confirmButtonText: 'OK',
+                    confirmButtonColor: '#4f46e5'
+                });
+            });
+            
+            microsoftLoginBtn.addEventListener('click', function() {
+                Swal.fire({
+                    title: 'Microsoft Sign In',
+                    text: 'This feature is for demonstration purposes. In a real application, this would integrate with Microsoft Azure AD.',
+                    icon: 'info',
+                    confirmButtonText: 'OK',
+                    confirmButtonColor: '#4f46e5'
+                });
+            });
+            
+            // Check for existing session
+            function checkExistingSession() {
+                const sessionData = localStorage.getItem('userSession') || sessionStorage.getItem('userSession');
+                
+                if (sessionData) {
+                    const session = JSON.parse(sessionData);
+                    
+                    if (session.isLoggedIn) {
+                        // Auto-fill username if remember me was checked
+                        if (localStorage.getItem('userSession')) {
+                            usernameInput.value = session.user.username;
+                            rememberMeCheckbox.checked = true;
+                        }
+                        
+                        // Show welcome back message
+                        const lastLogin = new Date(session.loginTime);
+                        const now = new Date();
+                        const diffHours = Math.floor((now - lastLogin) / (1000 * 60 * 60));
+                        
+                        if (diffHours < 24) {
+                            showSuccessMessage(`Welcome back, ${session.user.fullName}!`);
+                        }
+                    }
+                }
+            }
+            
+            // Initialize
+            checkExistingSession();
+            
+            // Auto focus username field
+            usernameInput.focus();
+            
+            // Re-initialize feather icons periodically
+            setInterval(() => feather.replace(), 1000);
+        });
+    </script>
+</body>
+</html>

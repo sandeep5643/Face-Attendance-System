@@ -1,0 +1,1729 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="description" content="View and Manage Registered Students">
+    <meta name="author" content="AdminKit">
+    <meta name="keywords" content="students, view, manage, update, delete">
+
+    <link rel="preconnect" href="https://fonts.gstatic.com">
+    <link rel="shortcut icon" href="img/icons/icon-48x48.png" />
+
+    <title>View Students - Face Attendance System</title>
+
+    <link href="css/app.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/dataTables.bootstrap5.min.css">
+    
+    <!-- jQuery MUST be loaded before DataTables -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+    <style>
+        /* MAIN CONTENT FIXES ONLY - SIDEBAR UNTOUCHED */
+        .main-content-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        /* TABLE STYLES */
+        .student-table {
+            background-color: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            margin-bottom: 15px;
+        }
+        
+        .student-table .table {
+            margin-bottom: 0;
+        }
+        
+        /* IMPROVED TABLE LAYOUT */
+        #studentsTable {
+            width: 100% !important;
+        }
+        
+        #studentsTable th,
+        #studentsTable td {
+            padding: 12px 8px;
+            vertical-align: middle;
+        }
+        
+        /* COLUMN SPECIFIC STYLES */
+        #studentsTable th:nth-child(1),
+        #studentsTable td:nth-child(1) {
+            width: 50px;
+            text-align: center;
+        }
+        
+        #studentsTable th:nth-child(2),
+        #studentsTable td:nth-child(2) {
+            min-width: 150px;
+            max-width: 200px;
+        }
+        
+        #studentsTable th:nth-child(3),
+        #studentsTable td:nth-child(3) {
+            width: 120px;
+        }
+        
+        #studentsTable th:nth-child(4),
+        #studentsTable td:nth-child(4) {
+            width: 120px;
+        }
+        
+        #studentsTable th:nth-child(5),
+        #studentsTable td:nth-child(5) {
+            width: 150px;
+        }
+        
+        #studentsTable th:nth-child(6),
+        #studentsTable td:nth-child(6) {
+            width: 150px;
+        }
+        
+        #studentsTable th:nth-child(7),
+        #studentsTable td:nth-child(7) {
+            width: 120px;
+        }
+        
+        #studentsTable th:nth-child(8),
+        #studentsTable td:nth-child(8) {
+            width: 130px;
+            text-align: center;
+        }
+        
+        /* DATA CELL STYLES */
+        .data-cell {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        
+        .badge-row {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            flex-wrap: wrap;
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 5px;
+            justify-content: center;
+        }
+        
+        .btn-view, .btn-update, .btn-delete {
+            width: 32px;
+            height: 32px;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .btn-view {
+            background-color: #4299e1;
+            color: white;
+            border: none;
+        }
+        
+        .btn-view:hover {
+            background-color: #3182ce;
+        }
+        
+        .btn-update {
+            background-color: #48bb78;
+            color: white;
+            border: none;
+        }
+        
+        .btn-update:hover {
+            background-color: #38a169;
+        }
+        
+        .btn-delete {
+            background-color: #f56565;
+            color: white;
+            border: none;
+        }
+        
+        .btn-delete:hover {
+            background-color: #e53e3e;
+        }
+        
+        /* BADGE STYLES */
+        .status-badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        
+        .status-active {
+            background-color: #c6f6d5;
+            color: #22543d;
+        }
+        
+        .status-inactive {
+            background-color: #fed7d7;
+            color: #742a2a;
+        }
+        
+        .count-badge {
+            background-color: #4299e1;
+            color: white;
+            padding: 2px 6px;
+            border-radius: 10px;
+            font-size: 0.7rem;
+        }
+        
+        /* TABLE HEADER - IMPROVED */
+        .table-header {
+            background-color: #f8fafc;
+            padding: 15px 20px;
+            border-bottom: 1px solid #e2e8f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        
+        .table-header-left {
+            flex: 1;
+            min-width: 200px;
+        }
+        
+        .table-header-right {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        
+        /* SEARCH BAR - IMPROVED */
+        .search-container {
+            position: relative;
+            min-width: 250px;
+            max-width: 350px;
+            width: 100%;
+        }
+        
+        .search-container .form-control {
+            border-radius: 20px;
+            padding: 8px 15px 8px 40px;
+            border: 1px solid #e2e8f0;
+            transition: all 0.3s;
+            width: 100%;
+        }
+        
+        .search-container .form-control:focus {
+            border-color: #4299e1;
+            box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.1);
+        }
+        
+        .search-container i {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #a0aec0;
+            z-index: 10;
+        }
+        
+        .search-btn {
+            position: absolute;
+            right: 5px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: #4299e1;
+            padding: 5px 10px;
+            cursor: pointer;
+            display: none;
+        }
+        
+        .search-container .form-control:focus + .search-btn {
+            display: block;
+        }
+        
+        /* EXPORT BUTTONS */
+        .export-buttons {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        
+        /* STATS CARDS */
+        .stats-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+            height: 100%;
+        }
+        
+        .stats-number {
+            font-size: 1.8rem;
+            font-weight: bold;
+            margin: 5px 0;
+        }
+        
+        /* MODAL */
+        .student-photos {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 10px;
+            max-height: 200px;
+            overflow-y: auto;
+            padding: 5px;
+        }
+        
+        .student-photo {
+            width: 80px;
+            height: 60px;
+            object-fit: cover;
+            border-radius: 4px;
+            border: 2px solid #e2e8f0;
+        }
+        
+        /* NO DATA */
+        .no-data {
+            text-align: center;
+            padding: 40px 20px;
+            color: #a0aec0;
+        }
+        
+        .no-data i {
+            font-size: 48px;
+            margin-bottom: 15px;
+            color: #cbd5e0;
+        }
+        
+        /* FOOTER SPACING FIX */
+        .footer {
+            padding: 10px 0;
+            margin-top: 10px;
+        }
+
+        /* DATATABLE PAGINATION FIXES */
+        .dataTables_wrapper .dataTables_paginate {
+            margin-top: 15px !important;
+            padding: 10px 0 !important;
+        }
+
+        .dataTables_wrapper .dataTables_paginate .paginate_button {
+            border: 1px solid #dee2e6 !important;
+            padding: 5px 10px !important;
+            margin: 0 2px !important;
+            border-radius: 4px !important;
+            color: #495057 !important;
+            background-color: white !important;
+        }
+
+        .dataTables_wrapper .dataTables_paginate .paginate_button.current {
+            background-color: #4299e1 !important;
+            color: white !important;
+            border-color: #4299e1 !important;
+        }
+
+        .dataTables_wrapper .dataTables_paginate .paginate_button:hover {
+            background-color: #e9ecef !important;
+            border-color: #dee2e6 !important;
+        }
+
+        .dataTables_wrapper .dataTables_paginate .paginate_button.current:hover {
+            background-color: #3182ce !important;
+            border-color: #3182ce !important;
+        }
+
+        .dataTables_wrapper .dataTables_length,
+        .dataTables_wrapper .dataTables_info {
+            padding: 10px 0 !important;
+            font-size: 14px !important;
+            color: #6c757d !important;
+        }
+
+        .dataTables_wrapper .dataTables_length label {
+            margin-bottom: 0 !important;
+            font-weight: normal !important;
+        }
+
+        .dataTables_wrapper .dataTables_length select {
+            border: 1px solid #ced4da !important;
+            border-radius: 4px !important;
+            padding: 4px 8px !important;
+            margin: 0 5px !important;
+            font-size: 14px !important;
+        }
+
+        /* CUSTOM PAGINATION STYLES */
+        .custom-pagination-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 20px;
+            background-color: #f8fafc;
+            border-top: 1px solid #e2e8f0;
+            border-radius: 0 0 8px 8px;
+        }
+
+        .pagination-left {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .pagination-right {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .entries-info {
+            font-size: 14px;
+            color: #6c757d;
+        }
+
+        .showing-info {
+            font-size: 14px;
+            color: #495057;
+            font-weight: 500;
+        }
+
+        .custom-pagination {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            margin: 0;
+            padding: 0;
+            list-style: none;
+        }
+
+        .page-item {
+            margin: 0;
+        }
+
+        .page-link {
+            border: 1px solid #dee2e6;
+            padding: 6px 12px;
+            color: #4299e1;
+            background-color: white;
+            border-radius: 4px;
+            text-decoration: none;
+            font-size: 14px;
+            transition: all 0.2s;
+            min-width: 40px;
+            text-align: center;
+        }
+
+        .page-link:hover {
+            background-color: #e9ecef;
+            border-color: #dee2e6;
+            color: #3182ce;
+        }
+
+        .page-item.active .page-link {
+            background-color: #4299e1;
+            border-color: #4299e1;
+            color: white;
+        }
+
+        .page-item.disabled .page-link {
+            color: #6c757d;
+            background-color: #f8f9fa;
+            border-color: #dee2e6;
+            cursor: not-allowed;
+        }
+
+        /* RESPONSIVE */
+        @media (max-width: 992px) {
+            .table-header {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 15px;
+            }
+            
+            .table-header-left {
+                width: 100%;
+            }
+            
+            .table-header-right {
+                width: 100%;
+                justify-content: space-between;
+            }
+            
+            .search-container {
+                max-width: 100%;
+                min-width: 100%;
+            }
+            
+            .export-buttons {
+                flex-wrap: wrap;
+                justify-content: flex-end;
+            }
+
+            .custom-pagination-container {
+                flex-direction: column;
+                gap: 15px;
+                align-items: stretch;
+            }
+
+            .pagination-left {
+                justify-content: space-between;
+                width: 100%;
+            }
+
+            .pagination-right {
+                justify-content: center;
+                width: 100%;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .table-responsive {
+                overflow-x: auto;
+            }
+            
+            #studentsTable {
+                min-width: 800px;
+            }
+            
+            .stats-card {
+                margin-bottom: 10px;
+            }
+            
+            .table-header-right {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 10px;
+            }
+            
+            .search-container {
+                order: 1;
+            }
+            
+            .export-buttons {
+                order: 2;
+                justify-content: center;
+            }
+
+            .custom-pagination {
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+
+            .pagination-left {
+                flex-direction: column;
+                gap: 10px;
+                align-items: center;
+                text-align: center;
+            }
+        }
+        
+        @media (max-width: 576px) {
+            .container-fluid.p-3 {
+                padding: 10px !important;
+            }
+            
+            .table-header {
+                padding: 12px 15px;
+            }
+            
+            .search-container {
+                min-width: 100%;
+            }
+            
+            .export-buttons {
+                width: 100%;
+                justify-content: center;
+            }
+            
+            .btn-sm {
+                padding: 5px 10px;
+                font-size: 0.875rem;
+            }
+
+            .custom-pagination-container {
+                padding: 10px 15px;
+            }
+
+            .page-link {
+                padding: 5px 8px;
+                min-width: 36px;
+                font-size: 13px;
+            }
+
+            .entries-info,
+            .showing-info {
+                font-size: 13px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="wrapper">
+        <nav id="sidebar" class="sidebar js-sidebar">
+            <div class="sidebar-content js-simplebar">
+                <a class="sidebar-brand" href="/dashboard">
+                    <span class="align-middle">Face Attendance</span>
+                </a>
+
+                <ul class="sidebar-nav">
+                    <li class="sidebar-header">
+                        Pages
+                    </li>
+
+                    <li class="sidebar-item">
+                        <a class="sidebar-link" href="/dashboard">
+                            <i class="align-middle" data-feather="sliders"></i> <span class="align-middle">Dashboard</span>
+                        </a>
+                    </li>
+
+                    <li class="sidebar-item">
+                        <a class="sidebar-link" href="/register-student">
+                            <i class="align-middle" data-feather="user"></i> <span class="align-middle">Register Student</span>
+                        </a>
+                    </li>
+
+                    <li class="sidebar-item active">
+                        <a class="sidebar-link" href="/view-students">
+                            <i class="align-middle" data-feather="log-in"></i> 
+                            <span class="align-middle">View Students</span>
+                        </a>
+                    </li>
+
+                    <li class="sidebar-item">
+                        <a class="sidebar-link" href="/mark-attendance">
+                            <i class="align-middle" data-feather="user-plus"></i> <span class="align-middle">Mark Attendance</span>
+                        </a>
+                    </li>
+
+                    <li class="sidebar-item">
+                        <a class="sidebar-link" href="#" id="sidebarLogout">
+                            <i class="align-middle" data-feather="log-out"></i> <span class="align-middle">Logout</span>
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </nav>
+
+        <div class="main">
+            <nav class="navbar navbar-expand navbar-light navbar-bg">
+                <a class="sidebar-toggle js-sidebar-toggle">
+                    <i class="hamburger align-self-center"></i>
+                </a>
+
+                <div class="navbar-collapse collapse">
+                    <ul class="navbar-nav navbar-align">
+                        <!-- Clean navbar -->
+                    </ul>
+                </div>
+            </nav>
+
+            <main class="content">
+                <div class="container-fluid p-3">
+                    <div class="row mb-3">
+                        <div class="col-12">
+                            <h1 class="h3 mb-1">View Students</h1>
+                            <p class="text-muted mb-0">Manage and view all registered students from database</p>
+                        </div>
+                    </div>
+
+                    <!-- Statistics Cards -->
+                    <div class="row mb-3">
+                        <div class="col-md-3 col-sm-6 mb-3">
+                            <div class="stats-card">
+                                <i data-feather="users"></i>
+                                <div class="stats-number" id="totalStudents">0</div>
+                                <div>Total Students</div>
+                            </div>
+                        </div>
+                        <div class="col-md-3 col-sm-6 mb-3">
+                            <div class="stats-card" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+                                <i data-feather="camera"></i>
+                                <div class="stats-number" id="totalEncodings">0</div>
+                                <div>Face Encodings</div>
+                            </div>
+                        </div>
+                        <div class="col-md-3 col-sm-6 mb-3">
+                            <div class="stats-card" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+                                <i data-feather="clock"></i>
+                                <div class="stats-number" id="todayAttendance">0</div>
+                                <div>Today's Attendance</div>
+                            </div>
+                        </div>
+                        <div class="col-md-3 col-sm-6 mb-3">
+                            <div class="stats-card" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);">
+                                <i data-feather="calendar"></i>
+                                <div class="stats-number" id="modelReady">Loading</div>
+                                <div>Model Status</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Student Table -->
+                    <div class="student-table">
+                        <div class="table-header">
+                            <div class="table-header-left">
+                                <h5 class="mb-0">Registered Students</h5>
+                            </div>
+                            <div class="table-header-right">
+                                <div class="search-container">
+                                    <input type="text" id="searchInput" class="form-control" placeholder="Search by name or enrollment...">
+                                    <button class="search-btn" id="searchButton">
+                                        <i data-feather="search"></i>
+                                    </button>
+                                </div>
+                                <div class="export-buttons">
+                                    <button class="btn btn-outline-primary btn-sm" id="exportCSV">
+                                        <i data-feather="download"></i> Export
+                                    </button>
+                                    <button class="btn btn-primary btn-sm" id="refreshData">
+                                        <i data-feather="refresh-cw"></i> Refresh
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0" id="studentsTable">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Student Name</th>
+                                        <th>Enrollment No</th>
+                                        <th>Registration Date</th>
+                                        <th>Face Images</th>
+                                        <th>Face Encodings</th>
+                                        <th>Attendance</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="studentsTableBody">
+                                    <!-- Students will be loaded here dynamically -->
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Custom Pagination -->
+                        <div class="custom-pagination-container" id="customPagination" style="display: none;">
+                            <div class="pagination-left">
+                                <div class="entries-info">
+                                    Show 
+                                    <select id="pageSizeSelect" class="form-select form-select-sm d-inline-block w-auto">
+                                        <option value="5">5</option>
+                                        <option value="10" selected>10</option>
+                                        <option value="25">25</option>
+                                        <option value="50">50</option>
+                                        <option value="-1">All</option>
+                                    </select>
+                                    entries
+                                </div>
+                                <div class="showing-info" id="showingInfo">
+                                    Showing 1 to 1 of 1 students
+                                </div>
+                            </div>
+                            <div class="pagination-right">
+                                <nav>
+                                    <ul class="custom-pagination" id="customPaginationLinks">
+                                        <!-- Pagination links will be dynamically generated -->
+                                    </ul>
+                                </nav>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- No Data Message -->
+                    <div id="noDataMessage" class="no-data" style="display: none;">
+                        <i data-feather="users"></i>
+                        <h4>No Students Found</h4>
+                        <p>No students have been registered yet. <a href="/register-student">Register a new student</a> to get started.</p>
+                    </div>
+
+                    <!-- Loading Spinner -->
+                    <div id="loadingSpinner" class="text-center my-3">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p class="mt-1 mb-0">Loading students data...</p>
+                    </div>
+                </div>
+            </main>
+
+            <!-- View Student Modal -->
+            <div class="modal fade" id="viewStudentModal" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog modal-lg">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">Student Details</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="row">
+                                <div class="col-md-8">
+                                    <h4 id="viewStudentName"></h4>
+                                    <p class="text-muted mb-1">Enrollment No: <strong id="viewEnrollmentNo"></strong></p>
+                                    <p class="text-muted mb-1">Registration Date: <span id="viewRegistrationDate"></span></p>
+                                    <p class="text-muted mb-0">Student ID: <span id="viewStudentId"></span></p>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="text-end">
+                                        <span class="status-badge status-active" id="viewStatus">Active</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="row mt-3">
+                                <div class="col-md-6">
+                                    <h6>Face Images <span class="count-badge" id="viewPhotoCount">0</span></h6>
+                                    <div id="viewPhotos" class="student-photos">
+                                        <!-- Photos will be loaded here -->
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <h6>Statistics</h6>
+                                    <div class="card">
+                                        <div class="card-body">
+                                            <p><i data-feather="camera" class="me-2"></i> Face Encodings: <strong id="viewEncodingsCount">0</strong></p>
+                                            <p><i data-feather="calendar" class="me-2"></i> Total Attendance: <strong id="viewAttendanceCount">0</strong></p>
+                                            <p><i data-feather="folder" class="me-2"></i> Folder: <span id="viewFolderStatus" class="badge bg-secondary">Not Available</span></p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <footer class="footer">
+                <div class="container-fluid">
+                    <div class="row text-muted">
+                        <div class="col-6 text-start">
+                            <p class="mb-0">
+                                <strong>Face Attendance System</strong> © 2025
+                            </p>
+                        </div>
+                        <div class="col-6 text-end">
+                            <ul class="list-inline mb-0">
+                                <li class="list-inline-item">
+                                    <a class="text-muted" href="#" target="_blank">Support</a>
+                                </li>
+                                <li class="list-inline-item">
+                                    <a class="text-muted" href="#" target="blank">Help Center</a>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </footer>
+        </div>
+    </div>
+
+    <!-- JavaScript Libraries (CORRECT ORDER) -->
+    <script src="js/app.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.4/js/dataTables.bootstrap5.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    
+    <!-- MAIN APPLICATION SCRIPT -->
+    <script>
+        // Global variables
+        const BACKEND_URL = 'http://127.0.0.1:5000';
+        let studentsData = [];
+        let dataTable = null;
+        let currentPageSize = 10;
+
+        // Wait for DOM to be fully loaded
+        document.addEventListener('DOMContentLoaded', async function() {
+            console.log('🎯 View Students Page Initializing...');
+            
+            // Initialize feather icons
+            feather.replace();
+            
+            // Check authentication first
+            try {
+                console.log('🔐 Checking authentication...');
+                const authResponse = await fetch('/api/check-session', {
+                    credentials: 'include'
+                });
+                
+                if (!authResponse.ok) {
+                    throw new Error('Auth failed');
+                }
+                
+                const authData = await authResponse.json();
+                
+                if (!authData.logged_in) {
+                    console.log('⚠️ Not authenticated, redirecting to login...');
+                    window.location.href = '/sign-in';
+                    return;
+                }
+                
+                console.log('✅ Authenticated as:', authData.user?.username);
+            } catch (error) {
+                console.error('❌ Authentication error:', error);
+                window.location.href = '/sign-in';
+                return;
+            }
+            
+            // Initialize DataTable with custom pagination
+            initializeDataTable();
+            
+            // Load initial data
+            await loadInitialData();
+            
+            // Setup event listeners
+            setupEventListeners();
+            
+            // Setup logout
+            setupLogout();
+            
+            console.log('✅ Page initialization complete');
+        });
+
+        // Initialize DataTable with CUSTOM PAGINATION
+        function initializeDataTable() {
+            console.log('📊 Initializing DataTable with custom pagination...');
+            
+            dataTable = $('#studentsTable').DataTable({
+                pageLength: 10,
+                lengthMenu: [[5, 10, 25, 50, -1], [5, 10, 25, 50, "All"]],
+                language: {
+                    search: "",
+                    searchPlaceholder: "Search students...",
+                    lengthMenu: "_MENU_", // Hide default length menu
+                    info: "_TOTAL_ entries", // Hide default info
+                    infoEmpty: "No entries",
+                    infoFiltered: "(filtered from _MAX_ total entries)",
+                    paginate: {
+                        first: "First",
+                        last: "Last",
+                        next: "Next",
+                        previous: "Previous"
+                    }
+                },
+                dom: 'rt', // Remove default pagination and length menu
+                columnDefs: [
+                    { orderable: false, targets: [7] },
+                    { 
+                        targets: [0, 1, 2, 3, 4, 5, 6],
+                        searchable: true 
+                    }
+                ],
+                autoWidth: false,
+                responsive: true,
+                search: {
+                    return: true
+                },
+                // Disable default pagination controls
+                paging: false,
+                info: false,
+                lengthChange: false
+            });
+            
+            // Setup custom pagination events
+            setupCustomPagination();
+            
+            // Custom search functionality
+            setupCustomSearch();
+        }
+
+        // Setup custom pagination
+        function setupCustomPagination() {
+            const pageSizeSelect = document.getElementById('pageSizeSelect');
+            
+            // Page size change event
+            pageSizeSelect.addEventListener('change', function() {
+                const newSize = this.value === '-1' ? -1 : parseInt(this.value);
+                currentPageSize = newSize;
+                if (dataTable) {
+                    if (newSize === -1) {
+                        dataTable.page.len(-1).draw();
+                    } else {
+                        dataTable.page.len(newSize).draw();
+                    }
+                    updateCustomPagination();
+                }
+            });
+            
+            // Update pagination on DataTable draw
+            if (dataTable) {
+                dataTable.on('draw', function() {
+                    updateCustomPagination();
+                });
+            }
+        }
+
+        // Update custom pagination display
+        function updateCustomPagination() {
+            if (!dataTable) return;
+            
+            const info = dataTable.page.info();
+            const customPagination = document.getElementById('customPagination');
+            const showingInfo = document.getElementById('showingInfo');
+            const paginationLinks = document.getElementById('customPaginationLinks');
+            
+            // Show/hide pagination container
+            if (info.recordsTotal === 0) {
+                customPagination.style.display = 'none';
+                return;
+            }
+            
+            customPagination.style.display = 'flex';
+            
+            // Update showing info
+            if (info.recordsDisplay === 0) {
+                showingInfo.textContent = 'Showing 0 entries';
+            } else {
+                const start = info.start + 1;
+                const end = info.end;
+                const total = info.recordsDisplay;
+                showingInfo.textContent = `Showing ${start} to ${end} of ${total} students`;
+            }
+            
+            // Update page size selector
+            const pageSizeSelect = document.getElementById('pageSizeSelect');
+            const currentSize = dataTable.page.len();
+            pageSizeSelect.value = currentSize === -1 ? '-1' : currentSize.toString();
+            
+            // Generate pagination links
+            paginationLinks.innerHTML = '';
+            
+            // Previous button
+            const prevLi = document.createElement('li');
+            prevLi.className = `page-item ${info.page === 0 ? 'disabled' : ''}`;
+            prevLi.innerHTML = `
+                <a class="page-link" href="#" data-page="prev">
+                    <span aria-hidden="true">&laquo;</span>
+                </a>
+            `;
+            paginationLinks.appendChild(prevLi);
+            
+            // Page number buttons
+            const pages = info.pages;
+            const currentPage = info.page;
+            const maxVisiblePages = 5;
+            let startPage = Math.max(0, currentPage - Math.floor(maxVisiblePages / 2));
+            let endPage = Math.min(pages - 1, startPage + maxVisiblePages - 1);
+            
+            if (endPage - startPage + 1 < maxVisiblePages) {
+                startPage = Math.max(0, endPage - maxVisiblePages + 1);
+            }
+            
+            // First page
+            if (startPage > 0) {
+                const firstLi = document.createElement('li');
+                firstLi.className = 'page-item';
+                firstLi.innerHTML = `
+                    <a class="page-link" href="#" data-page="0">1</a>
+                `;
+                paginationLinks.appendChild(firstLi);
+                
+                if (startPage > 1) {
+                    const ellipsisLi = document.createElement('li');
+                    ellipsisLi.className = 'page-item disabled';
+                    ellipsisLi.innerHTML = '<span class="page-link">...</span>';
+                    paginationLinks.appendChild(ellipsisLi);
+                }
+            }
+            
+            // Page numbers
+            for (let i = startPage; i <= endPage; i++) {
+                const pageLi = document.createElement('li');
+                pageLi.className = `page-item ${i === currentPage ? 'active' : ''}`;
+                pageLi.innerHTML = `
+                    <a class="page-link" href="#" data-page="${i}">${i + 1}</a>
+                `;
+                paginationLinks.appendChild(pageLi);
+            }
+            
+            // Last page
+            if (endPage < pages - 1) {
+                if (endPage < pages - 2) {
+                    const ellipsisLi = document.createElement('li');
+                    ellipsisLi.className = 'page-item disabled';
+                    ellipsisLi.innerHTML = '<span class="page-link">...</span>';
+                    paginationLinks.appendChild(ellipsisLi);
+                }
+                
+                const lastLi = document.createElement('li');
+                lastLi.className = 'page-item';
+                lastLi.innerHTML = `
+                    <a class="page-link" href="#" data-page="${pages - 1}">${pages}</a>
+                `;
+                paginationLinks.appendChild(lastLi);
+            }
+            
+            // Next button
+            const nextLi = document.createElement('li');
+            nextLi.className = `page-item ${info.page === info.pages - 1 ? 'disabled' : ''}`;
+            nextLi.innerHTML = `
+                <a class="page-link" href="#" data-page="next">
+                    <span aria-hidden="true">&raquo;</span>
+                </a>
+            `;
+            paginationLinks.appendChild(nextLi);
+            
+            // Add click event listeners to pagination links
+            document.querySelectorAll('#customPaginationLinks .page-link').forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    if (this.closest('.page-item').classList.contains('disabled')) {
+                        return;
+                    }
+                    
+                    const pageAction = this.getAttribute('data-page');
+                    if (pageAction === 'prev') {
+                        dataTable.page('previous').draw('page');
+                    } else if (pageAction === 'next') {
+                        dataTable.page('next').draw('page');
+                    } else {
+                        dataTable.page(parseInt(pageAction)).draw('page');
+                    }
+                });
+            });
+            
+            // Refresh feather icons
+            feather.replace();
+        }
+
+        // Setup custom search functionality
+        function setupCustomSearch() {
+            const searchInput = document.getElementById('searchInput');
+            const searchButton = document.getElementById('searchButton');
+            
+            // Search on input (real-time)
+            searchInput.addEventListener('input', function(e) {
+                performSearch(e.target.value);
+            });
+            
+            // Search on button click
+            searchButton.addEventListener('click', function() {
+                performSearch(searchInput.value);
+            });
+            
+            // Search on Enter key
+            searchInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    performSearch(searchInput.value);
+                }
+            });
+            
+            // Clear search on Escape key
+            searchInput.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') {
+                    searchInput.value = '';
+                    performSearch('');
+                }
+            });
+        }
+
+        // Perform search function
+        function performSearch(searchTerm) {
+            console.log('🔍 Searching for:', searchTerm);
+            
+            if (dataTable) {
+                dataTable.search(searchTerm).draw();
+                
+                // Update search count
+                const info = dataTable.page.info();
+                const total = info.recordsTotal;
+                const filtered = info.recordsDisplay;
+                
+                // Show/hide no results message
+                if (searchTerm && filtered === 0) {
+                    showNoResultsMessage(searchTerm);
+                } else {
+                    hideNoResultsMessage();
+                }
+                
+                // Update search button
+                const searchButton = document.getElementById('searchButton');
+                if (searchTerm) {
+                    searchButton.innerHTML = '<i data-feather="x"></i>';
+                    feather.replace();
+                    
+                    // Change click handler to clear search
+                    searchButton.onclick = function() {
+                        document.getElementById('searchInput').value = '';
+                        performSearch('');
+                        document.getElementById('searchInput').focus();
+                    };
+                } else {
+                    searchButton.innerHTML = '<i data-feather="search"></i>';
+                    feather.replace();
+                    
+                    // Restore original click handler
+                    searchButton.onclick = function() {
+                        const searchInput = document.getElementById('searchInput');
+                        performSearch(searchInput.value);
+                    };
+                }
+            }
+        }
+
+        // Show no results message
+        function showNoResultsMessage(searchTerm) {
+            // Check if message already exists
+            let noResultsMsg = document.getElementById('noResultsMessage');
+            
+            if (!noResultsMsg) {
+                noResultsMsg = document.createElement('div');
+                noResultsMsg.id = 'noResultsMessage';
+                noResultsMsg.className = 'alert alert-warning mt-3';
+                noResultsMsg.innerHTML = `
+                    <div class="d-flex align-items-center">
+                        <i data-feather="search" class="me-2"></i>
+                        <div>
+                            <strong>No students found</strong>
+                            <p class="mb-0">No students match your search for "<strong>${searchTerm}</strong>"</p>
+                        </div>
+                    </div>
+                `;
+                
+                // Insert after the table
+                const tableContainer = document.querySelector('.student-table');
+                tableContainer.parentNode.insertBefore(noResultsMsg, tableContainer.nextSibling);
+                feather.replace();
+            } else {
+                noResultsMsg.innerHTML = `
+                    <div class="d-flex align-items-center">
+                        <i data-feather="search" class="me-2"></i>
+                        <div>
+                            <strong>No students found</strong>
+                            <p class="mb-0">No students match your search for "<strong>${searchTerm}</strong>"</p>
+                        </div>
+                    </div>
+                `;
+                feather.replace();
+            }
+            
+            noResultsMsg.style.display = 'block';
+        }
+
+        // Hide no results message
+        function hideNoResultsMessage() {
+            const noResultsMsg = document.getElementById('noResultsMessage');
+            if (noResultsMsg) {
+                noResultsMsg.style.display = 'none';
+            }
+        }
+
+        // Load initial data
+        async function loadInitialData() {
+            console.log('📥 Loading initial data...');
+            
+            // Show loading spinner
+            document.getElementById('loadingSpinner').style.display = 'block';
+            document.querySelector('.student-table').style.display = 'none';
+            document.getElementById('customPagination').style.display = 'none';
+            document.getElementById('noDataMessage').style.display = 'none';
+            hideNoResultsMessage();
+            
+            try {
+                // Load statistics
+                await loadStatistics();
+                
+                // Load students
+                await loadStudents();
+                
+            } catch (error) {
+                console.error('❌ Error loading initial data:', error);
+                showError('Failed to load data. Please try again.');
+                
+                // Show test data as fallback
+                showTestData();
+            } finally {
+                // Hide loading spinner
+                document.getElementById('loadingSpinner').style.display = 'none';
+            }
+        }
+
+        // Load statistics
+        async function loadStatistics() {
+            try {
+                console.log('📈 Loading statistics...');
+                
+                // Model status
+                const modelResponse = await fetch(`${BACKEND_URL}/api/model-status`);
+                if (modelResponse.ok) {
+                    const modelData = await modelResponse.json();
+                    
+                    document.getElementById('totalStudents').textContent = modelData.total_students || 0;
+                    document.getElementById('totalEncodings').textContent = modelData.total_encodings || 0;
+                    
+                    if (modelData.model_exists) {
+                        document.getElementById('modelReady').textContent = '✅ Ready';
+                    } else {
+                        document.getElementById('modelReady').textContent = '❌ Not Ready';
+                    }
+                }
+                
+                // Today's attendance
+                const today = new Date().toISOString().split('T')[0];
+                const attendanceResponse = await fetch(`${BACKEND_URL}/api/get-attendance?date=${today}`);
+                if (attendanceResponse.ok) {
+                    const attendanceData = await attendanceResponse.json();
+                    if (attendanceData.success) {
+                        document.getElementById('todayAttendance').textContent = attendanceData.total_records || 0;
+                    }
+                }
+                
+            } catch (error) {
+                console.error('Error loading statistics:', error);
+            }
+        }
+
+        // Load students from API - FIXED VERSION
+        async function loadStudents() {
+            try {
+                console.log('👥 Loading students from API...');
+                
+                const response = await fetch(`${BACKEND_URL}/api/get-students`, {
+                    credentials: 'include'
+                });
+                
+                console.log('API Response Status:', response.status);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+                
+                const data = await response.json();
+                console.log('API Response Data:', data);
+                
+                if (data.success) {
+                    studentsData = data.students || [];
+                    console.log(`✅ Loaded ${studentsData.length} students`);
+                    
+                    if (studentsData.length === 0) {
+                        console.log('⚠️ No students found in database');
+                        showNoDataMessage();
+                    } else {
+                        renderStudentsTable();
+                        updateCustomPagination();
+                    }
+                } else {
+                    throw new Error(data.message || 'API returned error');
+                }
+                
+            } catch (error) {
+                console.error('❌ Error loading students:', error);
+                throw error;
+            }
+        }
+
+        // Render students table - FIXED: Clean and clear display
+        function renderStudentsTable() {
+            console.log('🎨 Rendering table with', studentsData.length, 'students');
+            
+            const tbody = document.getElementById('studentsTableBody');
+            tbody.innerHTML = '';
+            
+            studentsData.forEach((student) => {
+                const regDate = student.created_at ? new Date(student.created_at).toLocaleDateString() : 'N/A';
+                
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${student.id}</td>
+                    <td>
+                        <div class="fw-semibold">${student.name}</div>
+                    </td>
+                    <td>
+                        <span class="badge bg-primary">${student.enrollment_number}</span>
+                    </td>
+                    <td>
+                        <small>${regDate}</small>
+                    </td>
+                    <td>
+                        <div class="data-cell">
+                            <div class="badge-row">
+                                ${student.has_face_images ? 
+                                    `<span class="badge bg-success">Available</span>` : 
+                                    `<span class="badge bg-secondary">Not Available</span>`}
+                            </div>
+                            <div class="badge-row">
+                                <span class="count-badge">${student.face_encodings_count || 0} images</span>
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="data-cell">
+                            <div class="badge-row">
+                                ${student.face_encodings_count > 0 ? 
+                                    `<span class="badge bg-info">${student.face_encodings_count} encodings</span>` : 
+                                    `<span class="badge bg-warning">No encodings</span>`}
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="data-cell">
+                            <div class="badge-row">
+                                ${student.total_attendance > 0 ? 
+                                    `<span class="badge bg-primary">${student.total_attendance} records</span>` : 
+                                    `<span class="badge bg-secondary">No attendance</span>`}
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="action-buttons">
+                            <button class="btn btn-sm btn-view" onclick="viewStudent(${student.id})" title="View Details">
+                                <i data-feather="eye"></i>
+                            </button>
+                            <button class="btn btn-sm btn-update" onclick="updateStudent(${student.id})" title="Edit Student">
+                                <i data-feather="edit"></i>
+                            </button>
+                            <button class="btn btn-sm btn-delete" onclick="deleteStudent(${student.id})" title="Delete Student">
+                                <i data-feather="trash-2"></i>
+                            </button>
+                        </div>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+            
+            // Update DataTable
+            if (dataTable) {
+                dataTable.clear();
+                dataTable.rows.add($('#studentsTableBody tr'));
+                dataTable.draw();
+            }
+            
+            // Show table
+            document.querySelector('.student-table').style.display = 'block';
+            document.getElementById('noDataMessage').style.display = 'none';
+            
+            // Refresh feather icons
+            feather.replace();
+        }
+
+        // Show test data (fallback)
+        function showTestData() {
+            console.log('📋 Showing test data as fallback...');
+            
+            const testData = [
+                {
+                    id: 1,
+                    name: "John Doe",
+                    enrollment_number: "EN001",
+                    created_at: new Date().toISOString(),
+                    has_face_images: true,
+                    face_encodings_count: 15,
+                    total_attendance: 8
+                },
+                {
+                    id: 2,
+                    name: "Jane Smith",
+                    enrollment_number: "EN002",
+                    created_at: new Date().toISOString(),
+                    has_face_images: true,
+                    face_encodings_count: 18,
+                    total_attendance: 12
+                },
+                {
+                    id: 3,
+                    name: "Robert Johnson",
+                    enrollment_number: "EN003",
+                    created_at: new Date().toISOString(),
+                    has_face_images: false,
+                    face_encodings_count: 0,
+                    total_attendance: 0
+                }
+            ];
+            
+            studentsData = testData;
+            renderStudentsTable();
+            
+            // Update stats with test values
+            document.getElementById('totalStudents').textContent = '3';
+            document.getElementById('totalEncodings').textContent = '33';
+            document.getElementById('todayAttendance').textContent = '0';
+            document.getElementById('modelReady').textContent = '✅ Ready';
+            
+            showToast('Using test data. Server connection issue.', 'warning');
+        }
+
+        // Show no data message
+        function showNoDataMessage() {
+            console.log('📭 Showing no data message');
+            
+            document.querySelector('.student-table').style.display = 'none';
+            document.getElementById('customPagination').style.display = 'none';
+            document.getElementById('noDataMessage').style.display = 'block';
+        }
+
+        // Show error
+        function showError(message) {
+            const tbody = document.getElementById('studentsTableBody');
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="8" class="text-center py-5 text-danger">
+                        <i data-feather="alert-triangle" style="width: 48px; height: 48px;"></i>
+                        <p class="mt-3">${message}</p>
+                    </td>
+                </tr>
+            `;
+            feather.replace();
+        }
+
+        // Setup event listeners
+        function setupEventListeners() {
+            // Refresh button
+            document.getElementById('refreshData').addEventListener('click', async function() {
+                console.log('🔄 Manual refresh requested');
+                await loadInitialData();
+                showToast('Data refreshed successfully', 'success');
+            });
+            
+            // Export CSV
+            document.getElementById('exportCSV').addEventListener('click', function() {
+                if (studentsData.length === 0) {
+                    showToast('No data to export', 'warning');
+                    return;
+                }
+                
+                let csv = 'ID,Student Name,Enrollment No,Registration Date,Face Images,Face Encodings,Attendance Count\n';
+                
+                studentsData.forEach((student) => {
+                    const regDate = student.created_at ? new Date(student.created_at).toLocaleDateString() : 'N/A';
+                    csv += `${student.id},"${student.name}","${student.enrollment_number}","${regDate}",${student.has_face_images ? 'Yes' : 'No'},${student.face_encodings_count},${student.total_attendance}\n`;
+                });
+                
+                const blob = new Blob([csv], { type: 'text/csv' });
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `students_${new Date().toISOString().split('T')[0]}.csv`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                
+                showToast('CSV file downloaded', 'success');
+            });
+        }
+
+        // Setup logout
+        function setupLogout() {
+            const sidebarLogout = document.getElementById('sidebarLogout');
+            if (sidebarLogout) {
+                sidebarLogout.addEventListener('click', async function(e) {
+                    e.preventDefault();
+                    console.log('🚪 Logging out...');
+                    
+                    try {
+                        await fetch('/logout');
+                        window.location.href = '/sign-in';
+                    } catch (error) {
+                        window.location.href = '/sign-in';
+                    }
+                });
+            }
+        }
+
+        // View student details
+        window.viewStudent = async function(studentId) {
+            try {
+                console.log(`👁️ Viewing student ${studentId}`);
+                
+                const response = await fetch(`${BACKEND_URL}/api/get-student/${studentId}`);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    const student = data.student;
+                    
+                    // Update modal content
+                    document.getElementById('viewStudentName').textContent = student.name;
+                    document.getElementById('viewEnrollmentNo').textContent = student.enrollment_number;
+                    document.getElementById('viewStudentId').textContent = student.id;
+                    document.getElementById('viewEncodingsCount').textContent = student.face_encodings_count || 0;
+                    document.getElementById('viewAttendanceCount').textContent = student.total_attendance_records || 0;
+                    
+                    // Format registration date
+                    if (student.created_at) {
+                        const date = new Date(student.created_at);
+                        document.getElementById('viewRegistrationDate').textContent = date.toLocaleString();
+                    } else {
+                        document.getElementById('viewRegistrationDate').textContent = 'N/A';
+                    }
+                    
+                    // Update folder status
+                    const folderStatus = document.getElementById('viewFolderStatus');
+                    if (student.folder_exists) {
+                        folderStatus.textContent = 'Available';
+                        folderStatus.className = 'badge bg-success';
+                    } else {
+                        folderStatus.textContent = 'Not Available';
+                        folderStatus.className = 'badge bg-secondary';
+                    }
+                    
+                    // Update face images
+                    const photosContainer = document.getElementById('viewPhotos');
+                    const photoCount = document.getElementById('viewPhotoCount');
+                    
+                    photosContainer.innerHTML = '';
+                    if (student.face_images_preview && student.face_images_preview.length > 0) {
+                        student.face_images_preview.forEach((photo, index) => {
+                            const img = document.createElement('img');
+                            img.src = photo;
+                            img.className = 'student-photo';
+                            img.title = `Photo ${index + 1}`;
+                            img.style.cursor = 'pointer';
+                            img.onclick = () => window.open(photo, '_blank');
+                            photosContainer.appendChild(img);
+                        });
+                        photoCount.textContent = student.face_encodings_count || 0;
+                    } else {
+                        photosContainer.innerHTML = `
+                            <div class="text-center w-100 py-3">
+                                <i data-feather="image" style="width: 48px; height: 48px; color: #cbd5e0;"></i>
+                                <p class="text-muted mt-2">No face images available</p>
+                            </div>
+                        `;
+                        photoCount.textContent = '0';
+                    }
+                    
+                    feather.replace();
+                    
+                    // Show modal
+                    const modal = new bootstrap.Modal(document.getElementById('viewStudentModal'));
+                    modal.show();
+                    
+                } else {
+                    showToast('Failed to load student details', 'error');
+                }
+                
+            } catch (error) {
+                console.error('Error loading student details:', error);
+                showToast('Failed to load student details', 'error');
+            }
+        };
+
+        // Update student
+        window.updateStudent = async function(studentId) {
+            const student = studentsData.find(s => s.id === studentId);
+            if (!student) {
+                showToast('Student not found', 'error');
+                return;
+            }
+            
+            const { value: newName } = await Swal.fire({
+                title: 'Update Student Name',
+                input: 'text',
+                inputLabel: 'Enter new name',
+                inputValue: student.name,
+                showCancelButton: true,
+                inputValidator: (value) => {
+                    if (!value) {
+                        return 'Please enter a name';
+                    }
+                }
+            });
+            
+            if (newName) {
+                try {
+                    const response = await fetch(`${BACKEND_URL}/api/update-student/${studentId}`, {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            name: newName
+                        })
+                    });
+                    
+                    if (response.ok) {
+                        const result = await response.json();
+                        if (result.success) {
+                            showToast('Student updated successfully', 'success');
+                            await loadInitialData(); // Refresh data
+                        } else {
+                            showToast(result.message || 'Failed to update student', 'error');
+                        }
+                    } else {
+                        throw new Error('Failed to update student');
+                    }
+                } catch (error) {
+                    console.error('Error updating student:', error);
+                    showToast('Failed to update student', 'error');
+                }
+            }
+        };
+
+        // DELETE STUDENT - Direct delete without any confirmation
+        window.deleteStudent = async function(studentId) {
+            try {
+                console.log(`🗑️ Deleting student ${studentId}...`);
+                
+                const response = await fetch(`${BACKEND_URL}/api/delete-student/${studentId}`, {
+                    method: 'DELETE'
+                });
+                
+                if (response.ok) {
+                    const result = await response.json();
+                    if (result.success) {
+                        // Show success message
+                        showToast('Student deleted successfully', 'success');
+                        
+                        // Reload data
+                        await loadInitialData();
+                    } else {
+                        showToast(result.message || 'Failed to delete student', 'error');
+                    }
+                } else {
+                    throw new Error('Failed to delete student');
+                }
+                
+            } catch (error) {
+                console.error('Error deleting student:', error);
+                showToast('Failed to delete student', 'error');
+            }
+        };
+
+        // Show toast notification
+        function showToast(message, type) {
+            const icon = type === 'success' ? 'check-circle' : 
+                        type === 'error' ? 'alert-circle' : 
+                        type === 'warning' ? 'alert-triangle' : 'info';
+            
+            Swal.fire({
+                icon: type,
+                title: message,
+                position: 'top-end',
+                showConfirmButton: false,
+                timer: 3000,
+                toast: true
+            });
+        }
+
+        // Auto-refresh every 30 seconds
+        setInterval(async () => {
+            console.log('🔄 Auto-refreshing data...');
+            try {
+                await loadStatistics();
+            } catch (error) {
+                console.error('Auto-refresh error:', error);
+            }
+        }, 30000);
+    </script>
+</body>
+</html>

@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="description" content="Student Registration with Face Capture">
+    <meta name="author" content="AdminKit">
+    <meta name="keywords" content="student, registration, face capture, attendance">
+
+    <link rel="preconnect" href="https://fonts.gstatic.com">
+    <link rel="shortcut icon" href="img/icons/icon-48x48.png" />
+
+    <title>Student Registration - Face Attendance System</title>
+
+    <link href="css/app.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        .camera-container {
+            position: relative;
+            max-width: 640px;
+            margin: 0 auto;
+        }
+        
+        #video {
+            width: 100%;
+            border-radius: 8px;
+            background-color: #000;
+        }
+        
+        #canvas {
+            display: none;
+        }
+        
+        .capture-controls {
+            margin-top: 15px;
+            text-align: center;
+        }
+        
+        .capture-btn {
+            margin: 5px;
+        }
+        
+        .photo-counter {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #4a5568;
+            margin: 15px 0;
+        }
+        
+        .photo-gallery {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 20px;
+            justify-content: center;
+        }
+        
+        .photo-thumbnail {
+            width: 80px;
+            height: 60px;
+            object-fit: cover;
+            border-radius: 4px;
+            border: 2px solid #e2e8f0;
+        }
+        
+        .status-message {
+            padding: 10px;
+            border-radius: 6px;
+            margin: 15px 0;
+            text-align: center;
+        }
+        
+        .status-success {
+            background-color: #d1fae5;
+            color: #065f46;
+        }
+        
+        .status-error {
+            background-color: #fee2e2;
+            color: #991b1b;
+        }
+        
+        .form-section {
+            background-color: #f8fafc;
+            padding: 25px;
+            border-radius: 10px;
+            margin-bottom: 25px;
+            border: 1px solid #e2e8f0;
+        }
+        
+        .section-title {
+            color: #4a5568;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #4299e1;
+        }
+        
+        .register-btn-container {
+            text-align: center;
+            margin-top: 30px;
+        }
+        
+        .loading {
+            display: none;
+            text-align: center;
+            margin: 15px 0;
+        }
+        
+        .loading-spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 2s linear infinite;
+            margin: 0 auto;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="wrapper">
+        <nav id="sidebar" class="sidebar js-sidebar">
+            <div class="sidebar-content js-simplebar">
+                <a class="sidebar-brand" href="index.html">
+                    <span class="align-middle">Face Attendance</span>
+                </a>
+
+                <ul class="sidebar-nav">
+                    <li class="sidebar-header">
+                        Pages
+                    </li>
+
+                    <li class="sidebar-item">
+                        <a class="sidebar-link" href="index.html">
+                            <i class="align-middle" data-feather="sliders"></i> <span class="align-middle">Dashboard</span>
+                        </a>
+                    </li>
+
+                    <li class="sidebar-item active">
+                        <a class="sidebar-link" href="register-student.html">
+                            <i class="align-middle" data-feather="user"></i> <span class="align-middle">Register Student</span>
+                        </a>
+                    </li>
+
+                    <li class="sidebar-item">
+                        <a class="sidebar-link" href="view-student.html">
+                            <i class="align-middle" data-feather="log-in"></i> <span class="align-middle">View Student</span>
+                        </a>
+                    </li>
+
+                    <li class="sidebar-item">
+                        <a class="sidebar-link" href="mark-attendance.html">
+                            <i class="align-middle" data-feather="user-plus"></i> <span class="align-middle">Mark Attendance</span>
+                        </a>
+                    </li>
+
+                    <li class="sidebar-item">
+						<a class="sidebar-link" href="#" id="sidebarLogout">
+							<i class="align-middle" data-feather="log-out"></i> <span class="align-middle">Logout</span>
+						</a>
+					</li>
+                </ul>
+            </div>
+        </nav>
+
+        <div class="main">
+            <nav class="navbar navbar-expand navbar-light navbar-bg">
+                <a class="sidebar-toggle js-sidebar-toggle">
+                    <i class="hamburger align-self-center"></i>
+                </a>
+
+                <div class="navbar-collapse collapse">
+                    <ul class="navbar-nav navbar-align">
+                        <!-- <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle d-none d-sm-inline-block" href="#" data-bs-toggle="dropdown">
+                                <img src="img/avatars/avatar.jpg" class="avatar img-fluid rounded me-1" alt="Admin" /> <span class="text-dark">Admin</span>
+                            </a>
+                            <div class="dropdown-menu dropdown-menu-end">
+                                <a class="dropdown-item" href="#"><i class="align-middle me-1" data-feather="user"></i> Profile</a>
+                                <a class="dropdown-item" href="#"><i class="align-middle me-1" data-feather="settings"></i> Settings</a>
+                                <div class="dropdown-divider"></div>
+                                <a class="dropdown-item" href="#">Log out</a>
+                            </div>
+                        </li> -->
+                    </ul>
+                </div>
+            </nav>
+
+            <main class="content">
+                <div class="container-fluid p-4">
+                    <h1 class="h3 mb-4">Register New Student</h1>
+                    
+                    <div id="statusMessage" class="status-message" style="display: none;"></div>
+                    
+                    <div class="form-section">
+                        <h3 class="section-title">Student Information</h3>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="studentName" class="form-label">Full Name</label>
+                                <input type="text" class="form-control" id="studentName" placeholder="Enter student's full name" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="enrollmentNumber" class="form-label">Enrollment Number</label>
+                                <input type="text" class="form-control" id="enrollmentNumber" placeholder="Enter enrollment number" required>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-section">
+                        <h3 class="section-title">Face Capture</h3>
+                        <p class="text-muted mb-4">Capture 15-30 photos of the student's face from different angles for better facial recognition.</p>
+                        
+                        <div class="camera-container">
+                            <video id="video" autoplay playsinline></video>
+                            <canvas id="canvas"></canvas>
+                            
+                            <div class="capture-controls">
+                                <button id="startCamera" class="btn btn-primary capture-btn">
+                                    <i class="align-middle" data-feather="camera"></i> Start Camera
+                                </button>
+                                <button id="capturePhoto" class="btn btn-success capture-btn" disabled>
+                                    <i class="align-middle" data-feather="aperture"></i> Capture Photo
+                                </button>
+                                <button id="autoCapture" class="btn btn-info capture-btn" disabled>
+                                    <i class="align-middle" data-feather="video"></i> Auto Capture (15)
+                                </button>
+                                <button id="stopCamera" class="btn btn-danger capture-btn" disabled>
+                                    <i class="align-middle" data-feather="stop-circle"></i> Stop Camera
+                                </button>
+                            </div>
+                            
+                            <div class="photo-counter">
+                                Photos captured: <span id="photoCount">0</span>/30
+                            </div>
+                            
+                            <div class="loading" id="captureLoading">
+                                <div class="loading-spinner"></div>
+                                <p>Capturing photos...</p>
+                            </div>
+                            
+                            <div id="photoGallery" class="photo-gallery"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="register-btn-container">
+                        <button id="registerStudent" class="btn btn-lg btn-primary" disabled>
+                            <i class="align-middle" data-feather="user-plus"></i> Register Student
+                        </button>
+                    </div>
+                    
+                    <div class="loading" id="registerLoading">
+                        <div class="loading-spinner"></div>
+                        <p>Registering student...</p>
+                    </div>
+                </div>
+            </main>
+
+            <footer class="footer">
+                <div class="container-fluid">
+                    <div class="row text-muted">
+                        <div class="col-6 text-start">
+                            <p class="mb-0">
+                                <strong>Face Attendance System</strong> © 2025
+                            </p>
+                        </div>
+                        <div class="col-6 text-end">
+                            <ul class="list-inline">
+                                <li class="list-inline-item">
+                                    <a class="text-muted" href="#" target="_blank">Support</a>
+                                </li>
+                                <li class="list-inline-item">
+                                    <a class="text-muted" href="#" target="_blank">Help Center</a>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </footer>
+        </div>
+    </div>
+
+    <script src="js/app.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize feather icons
+            feather.replace();
+            
+            // DOM elements
+            const video = document.getElementById('video');
+            const canvas = document.getElementById('canvas');
+            const startCameraBtn = document.getElementById('startCamera');
+            const stopCameraBtn = document.getElementById('stopCamera');
+            const capturePhotoBtn = document.getElementById('capturePhoto');
+            const autoCaptureBtn = document.getElementById('autoCapture');
+            const registerStudentBtn = document.getElementById('registerStudent');
+            const photoCountElement = document.getElementById('photoCount');
+            const photoGallery = document.getElementById('photoGallery');
+            const statusMessage = document.getElementById('statusMessage');
+            const captureLoading = document.getElementById('captureLoading');
+            const registerLoading = document.getElementById('registerLoading');
+            
+            // Variables
+            let stream = null;
+            let capturedPhotos = [];
+            let photoCount = 0;
+            let autoCaptureInterval = null;
+            
+            // Start camera
+            startCameraBtn.addEventListener('click', async function() {
+                try {
+                    statusMessage.style.display = 'none';
+                    stream = await navigator.mediaDevices.getUserMedia({ 
+                        video: { 
+                            width: { ideal: 640 },
+                            height: { ideal: 480 },
+                            facingMode: 'user'
+                        } 
+                    });
+                    
+                    video.srcObject = stream;
+                    
+                    // Enable/disable buttons
+                    startCameraBtn.disabled = true;
+                    stopCameraBtn.disabled = false;
+                    capturePhotoBtn.disabled = false;
+                    autoCaptureBtn.disabled = false;
+                    
+                    showStatus('Camera started successfully. Please position the student in front of the camera.', 'success');
+                } catch (err) {
+                    console.error('Error accessing camera:', err);
+                    showStatus('Error accessing camera. Please check permissions and try again.', 'error');
+                }
+            });
+            
+            // Stop camera
+            stopCameraBtn.addEventListener('click', function() {
+                if (stream) {
+                    stream.getTracks().forEach(track => track.stop());
+                    video.srcObject = null;
+                    
+                    // Enable/disable buttons
+                    startCameraBtn.disabled = false;
+                    stopCameraBtn.disabled = true;
+                    capturePhotoBtn.disabled = true;
+                    autoCaptureBtn.disabled = true;
+                    
+                    // Stop auto capture if running
+                    if (autoCaptureInterval) {
+                        clearInterval(autoCaptureInterval);
+                        autoCaptureInterval = null;
+                        autoCaptureBtn.innerHTML = '<i class="align-middle" data-feather="video"></i> Auto Capture (15)';
+                        feather.replace();
+                    }
+                    
+                    showStatus('Camera stopped.', 'success');
+                }
+            });
+            
+            // Capture single photo
+            capturePhotoBtn.addEventListener('click', function() {
+                capturePhoto();
+            });
+            
+            // Auto capture 15 photos
+            autoCaptureBtn.addEventListener('click', function() {
+                if (autoCaptureInterval) {
+                    // Stop auto capture
+                    clearInterval(autoCaptureInterval);
+                    autoCaptureInterval = null;
+                    autoCaptureBtn.innerHTML = '<i class="align-middle" data-feather="video"></i> Auto Capture (15)';
+                    feather.replace();
+                    showStatus('Auto capture stopped.', 'success');
+                } else {
+                    // Start auto capture
+                    if (photoCount >= 30) {
+                        showStatus('Maximum 30 photos already captured.', 'error');
+                        return;
+                    }
+                    
+                    showStatus('Auto capture started. Please keep the student in frame.', 'success');
+                    captureLoading.style.display = 'block';
+                    autoCaptureBtn.innerHTML = '<i class="align-middle" data-feather="stop-circle"></i> Stop Auto Capture';
+                    feather.replace();
+                    
+                    let photosToCapture = Math.min(15, 30 - photoCount);
+                    let captured = 0;
+                    
+                    autoCaptureInterval = setInterval(() => {
+                        if (captured < photosToCapture) {
+                            capturePhoto();
+                            captured++;
+                            
+                            // Update auto capture button text
+                            autoCaptureBtn.innerHTML = `<i class="align-middle" data-feather="stop-circle"></i> Stop (${photosToCapture - captured})`;
+                            feather.replace();
+                        } else {
+                            // Finished auto capture
+                            clearInterval(autoCaptureInterval);
+                            autoCaptureInterval = null;
+                            autoCaptureBtn.innerHTML = '<i class="align-middle" data-feather="video"></i> Auto Capture (15)';
+                            feather.replace();
+                            captureLoading.style.display = 'none';
+                            showStatus(`Auto capture completed. ${photosToCapture} photos captured.`, 'success');
+                        }
+                    }, 1000); // Capture every second
+                }
+            });
+            
+            // Register student - UPDATED WITH API CALL
+            registerStudentBtn.addEventListener('click', async function() {
+                const studentName = document.getElementById('studentName').value.trim();
+                const enrollmentNumber = document.getElementById('enrollmentNumber').value.trim();
+                
+                if (!studentName || !enrollmentNumber) {
+                    showStatus('Please enter student name and enrollment number.', 'error');
+                    return;
+                }
+                
+                if (capturedPhotos.length < 15) {
+                    showStatus('Please capture at least 15 photos of the student.', 'error');
+                    return;
+                }
+                
+                // Show loading
+                registerLoading.style.display = 'block';
+                registerStudentBtn.disabled = true;
+                
+                try {
+                    // API call to register student
+                    const response = await fetch('http://127.0.0.1:5000/api/register-student', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            name: studentName,
+                            enrollment_number: enrollmentNumber,
+                            face_images: capturedPhotos
+                        })
+                    });
+                    
+                    const result = await response.json();
+                    
+                    // Hide loading
+                    registerLoading.style.display = 'none';
+                    
+                    if (result.success) {
+                        showStatus(result.message || `Student "${studentName}" registered successfully with ${capturedPhotos.length} face photos!`, 'success');
+                        
+                        // Reset form
+                        document.getElementById('studentName').value = '';
+                        document.getElementById('enrollmentNumber').value = '';
+                        capturedPhotos = [];
+                        photoCount = 0;
+                        photoCountElement.textContent = '0';
+                        photoGallery.innerHTML = '';
+                        registerStudentBtn.disabled = true;
+                        
+                        // Stop camera if running
+                        if (stream) {
+                            stream.getTracks().forEach(track => track.stop());
+                            video.srcObject = null;
+                            startCameraBtn.disabled = false;
+                            stopCameraBtn.disabled = true;
+                            capturePhotoBtn.disabled = true;
+                            autoCaptureBtn.disabled = true;
+                        }
+                    } else {
+                        showStatus(`Registration failed: ${result.message}`, 'error');
+                        registerStudentBtn.disabled = false;
+                    }
+                    
+                } catch (error) {
+                    console.error('Error registering student:', error);
+                    registerLoading.style.display = 'none';
+                    showStatus('Failed to register student. Server error. Please try again.', 'error');
+                    registerStudentBtn.disabled = false;
+                }
+            });
+            
+            // Helper function to capture photo
+            function capturePhoto() {
+                if (photoCount >= 30) {
+                    showStatus('Maximum 30 photos reached.', 'error');
+                    return;
+                }
+                
+                // Set canvas dimensions to match video
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+                
+                // Draw video frame to canvas
+                const context = canvas.getContext('2d');
+                context.drawImage(video, 0, 0, canvas.width, canvas.height);
+                
+                // Get image data from canvas
+                const imageData = canvas.toDataURL('image/jpeg', 0.8);
+                
+                // Store photo
+                capturedPhotos.push(imageData);
+                photoCount++;
+                photoCountElement.textContent = photoCount;
+                
+                // Update photo gallery
+                updatePhotoGallery();
+                
+                // Enable register button if we have at least 15 photos
+                if (photoCount >= 15 && photoCount <= 30) {
+                    registerStudentBtn.disabled = false;
+                }
+                
+                // Show capture feedback
+                showStatus(`Photo ${photoCount} captured successfully.`, 'success');
+                
+                // If we reached max photos, stop auto capture
+                if (photoCount >= 30 && autoCaptureInterval) {
+                    clearInterval(autoCaptureInterval);
+                    autoCaptureInterval = null;
+                    autoCaptureBtn.innerHTML = '<i class="align-middle" data-feather="video"></i> Auto Capture (15)';
+                    feather.replace();
+                    captureLoading.style.display = 'none';
+                    showStatus('Maximum 30 photos captured. Auto capture stopped.', 'success');
+                }
+            }
+            
+            // Update photo gallery with thumbnails
+            function updatePhotoGallery() {
+                photoGallery.innerHTML = '';
+                
+                // Show last 6 photos as thumbnails
+                const startIndex = Math.max(0, capturedPhotos.length - 6);
+                for (let i = startIndex; i < capturedPhotos.length; i++) {
+                    const img = document.createElement('img');
+                    img.src = capturedPhotos[i];
+                    img.className = 'photo-thumbnail';
+                    img.title = `Photo ${i + 1}`;
+                    photoGallery.appendChild(img);
+                }
+            }
+            
+            // Show status message
+            function showStatus(message, type) {
+                statusMessage.textContent = message;
+                statusMessage.className = `status-message status-${type}`;
+                statusMessage.style.display = 'block';
+                
+                // Auto hide success messages after 5 seconds
+                if (type === 'success') {
+                    setTimeout(() => {
+                        statusMessage.style.display = 'none';
+                    }, 5000);
+                }
+            }
+            
+            // Validate form inputs to enable/disable register button
+            const studentNameInput = document.getElementById('studentName');
+            const enrollmentInput = document.getElementById('enrollmentNumber');
+            
+            function validateForm() {
+                const nameValid = studentNameInput.value.trim().length > 0;
+                const enrollmentValid = enrollmentInput.value.trim().length > 0;
+                const photosValid = photoCount >= 15;
+                
+                registerStudentBtn.disabled = !(nameValid && enrollmentValid && photosValid);
+            }
+            
+            studentNameInput.addEventListener('input', validateForm);
+            enrollmentInput.addEventListener('input', validateForm);
+            
+            // Initialize
+            feather.replace();
+        });
+    </script>
+    <script>
+// Authentication and Logout Functionality
+document.addEventListener('DOMContentLoaded', function() {
+    checkAuth();
+    setupLogout();
+});
+
+// Check authentication
+async function checkAuth() {
+    try {
+        const response = await fetch("/api/check-session");
+        const result = await response.json();
+        
+        if (!result.logged_in) {
+            // Redirect to login page
+            window.location.href = "/sign-in";
+        } else {
+            // User is logged in, update user info
+            const userElement = document.querySelector('.navbar .text-dark');
+            if (userElement && result.user) {
+                userElement.textContent = result.user.full_name || result.user.username;
+            }
+        }
+    } catch (error) {
+        console.error("Auth check error:", error);
+        window.location.href = "/sign-in";
+    }
+}
+
+// Setup logout functionality
+function setupLogout() {
+    // Sidebar logout link
+    const sidebarLogout = document.getElementById('sidebarLogout');
+    if (sidebarLogout) {
+        sidebarLogout.addEventListener('click', async function(e) {
+            e.preventDefault();
+            await logoutUser();
+        });
+    }
+    
+    // Navbar logout link
+    const navbarLogout = document.querySelector('.dropdown-item:last-child');
+    if (navbarLogout && navbarLogout.textContent.includes('Log out')) {
+        navbarLogout.addEventListener('click', async function(e) {
+            e.preventDefault();
+            await logoutUser();
+        });
+    }
+}
+
+// Logout function
+async function logoutUser() {
+    try {
+        const response = await fetch("/logout");
+        if (response.ok || response.redirected) {
+            window.location.href = "/sign-in";
+        } else {
+            window.location.href = "/sign-in";
+        }
+    } catch (error) {
+        console.error("Logout error:", error);
+        window.location.href = "/sign-in";
+    }
+}
+
+// Also handle direct /logout URL clicks
+document.addEventListener('click', function(e) {
+    if (e.target.closest('a[href="/logout"]')) {
+        e.preventDefault();
+        logoutUser();
+    }
+});
+</script>
+</body>
+</html>

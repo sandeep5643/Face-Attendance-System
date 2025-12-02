@@ -1,0 +1,1227 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="description" content="Face Recognition Attendance System">
+    <meta name="author" content="AdminKit">
+    <meta name="keywords" content="face recognition, attendance, camera, face detection">
+
+    <link rel="preconnect" href="https://fonts.gstatic.com">
+    <link rel="shortcut icon" href="img/icons/icon-48x48.png" />
+
+    <title>Mark Attendance - Face Attendance System</title>
+
+    <link href="css/app.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        .attendance-container {
+            background-color: white;
+            border-radius: 10px;
+            padding: 25px;
+            box-shadow: 0 2px 15px rgba(0,0,0,0.05);
+            margin-bottom: 25px;
+        }
+        
+        .camera-section {
+            position: relative;
+            margin-bottom: 30px;
+        }
+        
+        #video {
+            width: 100%;
+            max-width: 640px;
+            border-radius: 8px;
+            background-color: #000;
+            transform: scaleX(-1); /* Mirror effect */
+        }
+        
+        #canvas {
+            display: none;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+        
+        .detection-box {
+            position: absolute;
+            border: 3px solid #4CAF50;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(76, 175, 80, 0.5);
+            pointer-events: none;
+            z-index: 10;
+        }
+        
+        .detection-label {
+            position: absolute;
+            background-color: #4CAF50;
+            color: white;
+            padding: 2px 8px;
+            font-size: 12px;
+            border-radius: 3px;
+            transform: translateY(-100%);
+            white-space: nowrap;
+        }
+        
+        .camera-controls {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+        
+        .camera-btn {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        
+        .status-active {
+            background-color: #4CAF50;
+            box-shadow: 0 0 10px #4CAF50;
+        }
+        
+        .status-inactive {
+            background-color: #f44336;
+        }
+        
+        .detection-stats {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+        }
+        
+        .stat-item {
+            text-align: center;
+            padding: 10px;
+            background: white;
+            border-radius: 6px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+        
+        .stat-number {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: #4a5568;
+        }
+        
+        .stat-label {
+            font-size: 0.9rem;
+            color: #718096;
+        }
+        
+        .attendance-table-section {
+            margin-top: 30px;
+        }
+        
+        .table-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        
+        .date-filter {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .attendance-table {
+            background-color: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+        
+        .table-header {
+            background-color: #f8fafc;
+            padding: 20px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        
+        .face-match-animation {
+            animation: pulse 1.5s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        
+        .recognition-result {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            max-width: 300px;
+            animation: slideInRight 0.3s ease-out;
+        }
+        
+        @keyframes slideInRight {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        
+        .student-card {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .student-avatar {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid white;
+        }
+        
+        .student-info h5 {
+            margin: 0;
+            font-weight: 600;
+        }
+        
+        .student-info p {
+            margin: 5px 0 0 0;
+            opacity: 0.9;
+        }
+        
+        .confidence-bar {
+            height: 6px;
+            background-color: rgba(255,255,255,0.3);
+            border-radius: 3px;
+            margin-top: 8px;
+            overflow: hidden;
+        }
+        
+        .confidence-fill {
+            height: 100%;
+            background-color: white;
+            border-radius: 3px;
+        }
+        
+        .attendance-badge {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+        
+        .badge-present {
+            background-color: #c6f6d5;
+            color: #22543d;
+        }
+        
+        .badge-late {
+            background-color: #fed7d7;
+            color: #742a2a;
+        }
+        
+        .badge-absent {
+            background-color: #e2e8f0;
+            color: #4a5568;
+        }
+        
+        .loading-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0,0,0,0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            color: white;
+            border-radius: 8px;
+            z-index: 100;
+        }
+        
+        .loading-spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 2s linear infinite;
+            margin-bottom: 15px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .no-students {
+            text-align: center;
+            padding: 50px 20px;
+            color: #a0aec0;
+        }
+        
+        .no-students i {
+            font-size: 48px;
+            margin-bottom: 15px;
+            color: #cbd5e0;
+        }
+        
+        @media (max-width: 768px) {
+            .camera-controls {
+                flex-direction: column;
+            }
+            
+            .camera-btn {
+                width: 100%;
+            }
+            
+            .table-controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .date-filter {
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="wrapper">
+        <nav id="sidebar" class="sidebar js-sidebar">
+            <div class="sidebar-content js-simplebar">
+                <a class="sidebar-brand" href="index.html">
+                    <span class="align-middle">Face Attendance</span>
+                </a>
+
+                <ul class="sidebar-nav">
+                    <li class="sidebar-header">
+                        Pages
+                    </li>
+
+                    <li class="sidebar-item">
+                        <a class="sidebar-link" href="index.html">
+                            <i class="align-middle" data-feather="sliders"></i> <span class="align-middle">Dashboard</span>
+                        </a>
+                    </li>
+
+                    <li class="sidebar-item">
+                        <a class="sidebar-link" href="register-student.html">
+                            <i class="align-middle" data-feather="user"></i> <span class="align-middle">Register Student</span>
+                        </a>
+                    </li>
+
+                    <li class="sidebar-item">
+                        <a class="sidebar-link" href="view-student.html">
+                            <i class="align-middle" data-feather="log-in"></i> <span class="align-middle">View Students</span>
+                        </a>
+                    </li>
+
+                    <li class="sidebar-item active">
+                        <a class="sidebar-link" href="mark-attendance.html">
+                            <i class="align-middle" data-feather="user-plus"></i> <span class="align-middle">Mark Attendance</span>
+                        </a>
+                    </li>
+
+                    <li class="sidebar-item">
+						<a class="sidebar-link" href="#" id="sidebarLogout">
+							<i class="align-middle" data-feather="log-out"></i> <span class="align-middle">Logout</span>
+						</a>
+					</li>
+                </ul>
+            </div>
+        </nav>
+
+        <div class="main">
+            <nav class="navbar navbar-expand navbar-light navbar-bg">
+                <a class="sidebar-toggle js-sidebar-toggle">
+                    <i class="hamburger align-self-center"></i>
+                </a>
+
+                <div class="navbar-collapse collapse">
+                    <ul class="navbar-nav navbar-align">
+                        <!-- <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle d-none d-sm-inline-block" href="#" data-bs-toggle="dropdown">
+                                <img src="img/avatars/avatar.jpg" class="avatar img-fluid rounded me-1" alt="Admin" /> 
+                                <span class="text-dark">Admin</span>
+                            </a>
+                            <div class="dropdown-menu dropdown-menu-end">
+                                <a class="dropdown-item" href="#"><i class="align-middle me-1" data-feather="user"></i> Profile</a>
+                                <a class="dropdown-item" href="#"><i class="align-middle me-1" data-feather="settings"></i> Settings</a>
+                                <div class="dropdown-divider"></div>
+                                <a class="dropdown-item" href="#">Log out</a>
+                            </div>
+                        </li> -->
+                    </ul>
+                </div>
+            </nav>
+
+            <main class="content">
+                <div class="container-fluid p-4">
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <h1 class="h3 mb-2">Face Recognition Attendance</h1>
+                            <p class="text-muted">Use camera to detect faces and mark attendance automatically</p>
+                        </div>
+                    </div>
+
+                    <!-- Face Recognition Section -->
+                    <div class="attendance-container">
+                        <div class="row">
+                            <div class="col-lg-8">
+                                <div class="camera-section">
+                                    <div class="position-relative">
+                                        <video id="video" autoplay playsinline></video>
+                                        <div id="loadingOverlay" class="loading-overlay" style="display: none;">
+                                            <div class="loading-spinner"></div>
+                                            <p>Loading face recognition model...</p>
+                                        </div>
+                                        <canvas id="canvas" style="display: none;"></canvas>
+                                    </div>
+                                    
+                                    <div class="camera-controls">
+                                        <button id="startCamera" class="btn btn-primary camera-btn">
+                                            <i data-feather="camera"></i> Start Camera
+                                        </button>
+                                        <button id="captureAndMark" class="btn btn-success camera-btn" disabled>
+                                            <i data-feather="user-check"></i> Capture & Mark Attendance
+                                        </button>
+                                        <button id="startAutoMode" class="btn btn-info camera-btn" disabled>
+                                            <i data-feather="play"></i> Start Auto Mode
+                                        </button>
+                                        <button id="stopCamera" class="btn btn-danger camera-btn" disabled>
+                                            <i data-feather="stop-circle"></i> Stop Camera
+                                        </button>
+                                    </div>
+                                    
+                                    <div class="detection-stats">
+                                        <div class="stats-grid">
+                                            <div class="stat-item">
+                                                <div class="stat-number" id="totalAttendance">0</div>
+                                                <div class="stat-label">Total Marked</div>
+                                            </div>
+                                            <div class="stat-item">
+                                                <div class="stat-number" id="todayAttendance">0</div>
+                                                <div class="stat-label">Today's Attendance</div>
+                                            </div>
+                                            <div class="stat-item">
+                                                <div class="stat-number" id="totalStudents">0</div>
+                                                <div class="stat-label">Registered Students</div>
+                                            </div>
+                                            <div class="stat-item">
+                                                <div class="stat-number" id="apiStatus">✅</div>
+                                                <div class="stat-label">API Status</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-lg-4">
+                                <div id="recognitionResult" class="recognition-result" style="display: none;"></div>
+                                
+                                <div class="current-status">
+                                    <h5 class="mb-3">System Status</h5>
+                                    <div class="card">
+                                        <div class="card-body">
+                                            <div class="d-flex align-items-center mb-3">
+                                                <span class="status-indicator" id="cameraStatus"></span>
+                                                <span>Camera: <strong id="cameraStatusText">Not Started</strong></span>
+                                            </div>
+                                            <div class="d-flex align-items-center mb-3">
+                                                <span class="status-indicator" id="backendStatus"></span>
+                                                <span>Backend: <strong id="backendStatusText">Checking...</strong></span>
+                                            </div>
+                                            <div class="d-flex align-items-center mb-3">
+                                                <span class="status-indicator" id="modelStatus"></span>
+                                                <span>Model: <strong id="modelStatusText">Loading...</strong></span>
+                                            </div>
+                                            <div class="mt-4">
+                                                <label class="form-label">Subject</label>
+                                                <select class="form-select" id="subjectSelect">
+                                                    <option value="Mathematics">Mathematics</option>
+                                                    <option value="Physics">Physics</option>
+                                                    <option value="Chemistry">Chemistry</option>
+                                                    <option value="Computer Science">Computer Science</option>
+                                                    <option value="General">General</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Attendance Table -->
+                    <div class="attendance-table-section">
+                        <div class="table-controls">
+                            <div>
+                                <h5 class="mb-0">Today's Attendance</h5>
+                                <small class="text-muted" id="todayDate"></small>
+                            </div>
+                            <div class="date-filter">
+                                <input type="date" class="form-control" id="attendanceDate" value="">
+                                <button class="btn btn-outline-primary" id="refreshAttendance">
+                                    <i data-feather="refresh-cw"></i> Refresh
+                                </button>
+                                <button class="btn btn-primary" id="exportAttendance">
+                                    <i data-feather="download"></i> Export
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="attendance-table">
+                            <div class="table-responsive">
+                                <table class="table table-hover" id="attendanceTable">
+                                    <thead>
+                                        <tr>
+                                            <th>Sr. No</th>
+                                            <th>Student Name</th>
+                                            <th>Enrollment No</th>
+                                            <th>Status</th>
+                                            <th>Subject</th>
+                                            <th>Time</th>
+                                            <th>Confidence</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="attendanceTableBody">
+                                        <!-- Attendance records will be loaded here -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        
+                        <div id="noAttendance" class="no-students" style="display: none;">
+                            <i data-feather="calendar"></i>
+                            <h4>No Attendance Records</h4>
+                            <p>No attendance has been marked for today. Start face recognition to mark attendance.</p>
+                        </div>
+                    </div>
+                </div>
+            </main>
+
+            <footer class="footer">
+                <div class="container-fluid">
+                    <div class="row text-muted">
+                        <div class="col-6 text-start">
+                            <p class="mb-0">
+                                <strong>Face Attendance System</strong> © 2025
+                            </p>
+                        </div>
+                        <div class="col-6 text-end">
+                            <ul class="list-inline">
+                                <li class="list-inline-item">
+                                    <a class="text-muted" href="#" target="_blank">Support</a>
+                                </li>
+                                <li class="list-inline-item">
+                                    <a class="text-muted" href="#" target="_blank">Help Center</a>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </footer>
+        </div>
+    </div>
+
+    <script src="js/app.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize feather icons
+            feather.replace();
+            
+            // Backend API URL
+            const BACKEND_URL = 'http://127.0.0.1:5000';
+            
+            // Set today's date
+            const today = new Date();
+            const todayStr = today.toISOString().split('T')[0];
+            document.getElementById('todayDate').textContent = today.toLocaleDateString('en-US', { 
+                weekday: 'long', 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+            });
+            document.getElementById('attendanceDate').value = todayStr;
+            
+            // Variables
+            let videoStream = null;
+            let autoModeInterval = null;
+            let isAutoMode = false;
+            let modelLoaded = false;
+            
+            // DOM Elements
+            const video = document.getElementById('video');
+            const canvas = document.getElementById('canvas');
+            const startCameraBtn = document.getElementById('startCamera');
+            const stopCameraBtn = document.getElementById('stopCamera');
+            const captureBtn = document.getElementById('captureAndMark');
+            const autoModeBtn = document.getElementById('startAutoMode');
+            const subjectSelect = document.getElementById('subjectSelect');
+            
+            // Status indicators
+            const cameraStatus = document.getElementById('cameraStatus');
+            const cameraStatusText = document.getElementById('cameraStatusText');
+            const backendStatus = document.getElementById('backendStatus');
+            const backendStatusText = document.getElementById('backendStatusText');
+            const modelStatus = document.getElementById('modelStatus');
+            const modelStatusText = document.getElementById('modelStatusText');
+            
+            // Statistics elements
+            const totalAttendanceEl = document.getElementById('totalAttendance');
+            const todayAttendanceEl = document.getElementById('todayAttendance');
+            const totalStudentsEl = document.getElementById('totalStudents');
+            const apiStatusEl = document.getElementById('apiStatus');
+            
+            // Initialize system
+            initializeSystem();
+            
+            // Initialize system
+            async function initializeSystem() {
+                // Check backend status
+                await checkBackendStatus();
+                
+                // Load statistics
+                await loadStatistics();
+                
+                // Load today's attendance
+                await loadAttendanceData();
+                
+                // Set up periodic refresh
+                setInterval(loadStatistics, 30000); // Every 30 seconds
+            }
+            
+            // Check backend status
+            async function checkBackendStatus() {
+                try {
+                    const response = await fetch(`${BACKEND_URL}/api/model-status`);
+                    if (response.ok) {
+                        const data = await response.json();
+                        
+                        backendStatus.className = 'status-indicator status-active';
+                        backendStatusText.textContent = 'Connected';
+                        apiStatusEl.textContent = '✅';
+                        
+                        if (data.model_exists) {
+                            modelStatus.className = 'status-indicator status-active';
+                            modelStatusText.textContent = 'Loaded';
+                            modelLoaded = true;
+                        } else {
+                            modelStatus.className = 'status-indicator status-inactive';
+                            modelStatusText.textContent = 'No Model';
+                            modelLoaded = false;
+                        }
+                    }
+                } catch (error) {
+                    console.error('Backend connection error:', error);
+                    
+                    backendStatus.className = 'status-indicator status-inactive';
+                    backendStatusText.textContent = 'Disconnected';
+                    apiStatusEl.textContent = '❌';
+                    modelStatus.className = 'status-indicator status-inactive';
+                    modelStatusText.textContent = 'Unavailable';
+                    
+                    showToast('Backend server not reachable. Please start the Flask server.', 'error');
+                }
+            }
+            
+            // Load statistics
+            async function loadStatistics() {
+                try {
+                    // Get model status
+                    const modelResponse = await fetch(`${BACKEND_URL}/api/model-status`);
+                    if (modelResponse.ok) {
+                        const modelData = await modelResponse.json();
+                        totalStudentsEl.textContent = modelData.total_students || 0;
+                    }
+                    
+                    // Get attendance for today
+                    const today = new Date().toISOString().split('T')[0];
+                    const attendanceResponse = await fetch(`${BACKEND_URL}/api/get-attendance?date=${today}`);
+                    if (attendanceResponse.ok) {
+                        const attendanceData = await attendanceResponse.json();
+                        if (attendanceData.success) {
+                            todayAttendanceEl.textContent = attendanceData.total_records || 0;
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error loading statistics:', error);
+                }
+            }
+            
+            // Load attendance data
+            async function loadAttendanceData() {
+                try {
+                    const selectedDate = document.getElementById('attendanceDate').value;
+                    const response = await fetch(`${BACKEND_URL}/api/get-attendance?date=${selectedDate}`);
+                    
+                    if (response.ok) {
+                        const data = await response.json();
+                        
+                        if (data.success) {
+                            renderAttendanceTable(data.attendance);
+                            totalAttendanceEl.textContent = data.total_records || 0;
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error loading attendance:', error);
+                    showToast('Failed to load attendance data', 'error');
+                }
+            }
+            
+            // Render attendance table
+            function renderAttendanceTable(attendanceRecords) {
+                const tbody = document.getElementById('attendanceTableBody');
+                tbody.innerHTML = '';
+                
+                if (!attendanceRecords || attendanceRecords.length === 0) {
+                    document.getElementById('noAttendance').style.display = 'block';
+                    document.querySelector('.attendance-table').style.display = 'none';
+                    return;
+                }
+                
+                document.getElementById('noAttendance').style.display = 'none';
+                document.querySelector('.attendance-table').style.display = 'block';
+                
+                attendanceRecords.forEach((record, index) => {
+                    const row = document.createElement('tr');
+                    const checkInTime = new Date(record.marked_at || record.time);
+                    
+                    // Determine status badge
+                    let statusBadge = '';
+                    let statusClass = '';
+                    if (record.status === 'present') {
+                        statusBadge = 'Present';
+                        statusClass = 'badge-present';
+                    } else if (record.status === 'late') {
+                        statusBadge = 'Late';
+                        statusClass = 'badge-late';
+                    } else if (record.status === 'absent') {
+                        statusBadge = 'Absent';
+                        statusClass = 'badge-absent';
+                    } else {
+                        statusBadge = 'Present';
+                        statusClass = 'badge-present';
+                    }
+                    
+                    row.innerHTML = `
+                        <td>${index + 1}</td>
+                        <td>${record.student_name || 'Unknown'}</td>
+                        <td>${record.enrollment_number}</td>
+                        <td><span class="attendance-badge ${statusClass}">${statusBadge}</span></td>
+                        <td>${record.subject || 'General'}</td>
+                        <td>${checkInTime.toLocaleTimeString()}</td>
+                        <td>
+                            <div class="progress" style="height: 6px;">
+                                <div class="progress-bar bg-success" role="progressbar" style="width: ${(record.confidence || 0) * 100}%"></div>
+                            </div>
+                            <small>${Math.round((record.confidence || 0) * 100)}%</small>
+                        </td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-primary" onclick="viewStudentDetails('${record.enrollment_number}')">
+                                <i data-feather="eye"></i> View
+                            </button>
+                        </td>
+                    `;
+                    tbody.appendChild(row);
+                });
+                
+                feather.replace();
+            }
+            
+            // Start camera
+            startCameraBtn.addEventListener('click', async function() {
+                try {
+                    videoStream = await navigator.mediaDevices.getUserMedia({ 
+                        video: { 
+                            width: { ideal: 640 },
+                            height: { ideal: 480 },
+                            facingMode: 'user'
+                        } 
+                    });
+                    
+                    video.srcObject = videoStream;
+                    
+                    // Enable/disable buttons
+                    startCameraBtn.disabled = true;
+                    stopCameraBtn.disabled = false;
+                    captureBtn.disabled = false;
+                    autoModeBtn.disabled = false;
+                    
+                    // Update status
+                    cameraStatus.className = 'status-indicator status-active';
+                    cameraStatusText.textContent = 'Active';
+                    
+                    // Initialize canvas
+                    canvas.width = video.videoWidth;
+                    canvas.height = video.videoHeight;
+                    
+                    showToast('Camera started successfully', 'success');
+                    
+                } catch (err) {
+                    console.error('Error accessing camera:', err);
+                    showToast('Error accessing camera. Please check permissions.', 'error');
+                }
+            });
+            
+            // Stop camera
+            stopCameraBtn.addEventListener('click', function() {
+                if (videoStream) {
+                    // Stop auto mode if active
+                    if (isAutoMode) {
+                        stopAutoMode();
+                    }
+                    
+                    videoStream.getTracks().forEach(track => track.stop());
+                    video.srcObject = null;
+                    videoStream = null;
+                    
+                    // Enable/disable buttons
+                    startCameraBtn.disabled = false;
+                    stopCameraBtn.disabled = true;
+                    captureBtn.disabled = true;
+                    autoModeBtn.disabled = true;
+                    
+                    // Update status
+                    cameraStatus.className = 'status-indicator status-inactive';
+                    cameraStatusText.textContent = 'Inactive';
+                    
+                    showToast('Camera stopped', 'success');
+                }
+            });
+            
+            // Capture and mark attendance
+            captureBtn.addEventListener('click', async function() {
+                if (!videoStream) {
+                    showToast('Please start camera first', 'warning');
+                    return;
+                }
+                
+                if (!modelLoaded) {
+                    showToast('Face recognition model is not loaded', 'warning');
+                    return;
+                }
+                
+                try {
+                    // Show loading
+                    captureBtn.disabled = true;
+                    captureBtn.innerHTML = '<i data-feather="loader"></i> Processing...';
+                    feather.replace();
+                    
+                    // Capture photo
+                    const imageData = await capturePhoto();
+                    
+                    // Mark attendance via API
+                    const result = await markAttendanceViaAPI(imageData);
+                    
+                    // Show result
+                    showRecognitionResult(result);
+                    
+                    // Refresh attendance data
+                    await loadAttendanceData();
+                    
+                } catch (error) {
+                    console.error('Error marking attendance:', error);
+                    showToast('Failed to mark attendance', 'error');
+                } finally {
+                    // Reset button
+                    captureBtn.disabled = false;
+                    captureBtn.innerHTML = '<i data-feather="user-check"></i> Capture & Mark Attendance';
+                    feather.replace();
+                }
+            });
+            
+            // Start auto mode
+            autoModeBtn.addEventListener('click', function() {
+                if (!videoStream) {
+                    showToast('Please start camera first', 'warning');
+                    return;
+                }
+                
+                if (!modelLoaded) {
+                    showToast('Face recognition model is not loaded', 'warning');
+                    return;
+                }
+                
+                if (isAutoMode) {
+                    stopAutoMode();
+                } else {
+                    startAutoMode();
+                }
+            });
+            
+            // Start auto mode
+            function startAutoMode() {
+                isAutoMode = true;
+                autoModeBtn.innerHTML = '<i data-feather="pause"></i> Stop Auto Mode';
+                autoModeBtn.classList.remove('btn-info');
+                autoModeBtn.classList.add('btn-warning');
+                
+                showToast('Auto mode started. Recognizing faces every 5 seconds...', 'success');
+                
+                // Start interval
+                autoModeInterval = setInterval(async () => {
+                    try {
+                        // Capture photo
+                        const imageData = await capturePhoto();
+                        
+                        // Mark attendance via API
+                        const result = await markAttendanceViaAPI(imageData);
+                        
+                        // Show result if recognized
+                        if (result && result.recognized) {
+                            showRecognitionResult(result);
+                            
+                            // Refresh attendance data
+                            await loadAttendanceData();
+                        }
+                        
+                    } catch (error) {
+                        console.error('Auto mode error:', error);
+                    }
+                }, 5000); // Every 5 seconds
+            }
+            
+            // Stop auto mode
+            function stopAutoMode() {
+                isAutoMode = false;
+                clearInterval(autoModeInterval);
+                autoModeBtn.innerHTML = '<i data-feather="play"></i> Start Auto Mode';
+                autoModeBtn.classList.remove('btn-warning');
+                autoModeBtn.classList.add('btn-info');
+                
+                showToast('Auto mode stopped', 'success');
+            }
+            
+            // Capture photo from camera
+            async function capturePhoto() {
+                return new Promise((resolve) => {
+                    canvas.width = video.videoWidth;
+                    canvas.height = video.videoHeight;
+                    
+                    const context = canvas.getContext('2d');
+                    context.drawImage(video, 0, 0, canvas.width, canvas.height);
+                    
+                    // Convert to base64
+                    const imageData = canvas.toDataURL('image/jpeg', 0.8);
+                    resolve(imageData);
+                });
+            }
+            
+            // Mark attendance via API
+            async function markAttendanceViaAPI(imageData) {
+                const subject = subjectSelect.value;
+                
+                const response = await fetch(`${BACKEND_URL}/api/mark-attendance`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        subject: subject,
+                        face_image: imageData
+                    })
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                return await response.json();
+            }
+            
+            // Show recognition result
+            function showRecognitionResult(result) {
+                const resultDiv = document.getElementById('recognitionResult');
+                
+                if (result.success && result.recognized) {
+                    const record = result.attendance_record;
+                    const confidence = Math.round((record.confidence || 0) * 100);
+                    
+                    resultDiv.innerHTML = `
+                        <div class="student-card face-match-animation">
+                            <div style="background-color: white; border-radius: 50%; padding: 10px;">
+                                <i data-feather="user-check" style="width: 40px; height: 40px; color: #764ba2;"></i>
+                            </div>
+                            <div class="student-info">
+                                <h5>${record.student_name}</h5>
+                                <p>${record.enrollment_number}</p>
+                                <div class="confidence-bar">
+                                    <div class="confidence-fill" style="width: ${confidence}%"></div>
+                                </div>
+                                <small>Confidence: ${confidence}%</small>
+                            </div>
+                            <div style="margin-left: auto;">
+                                <span style="background-color: #4CAF50; color: white; padding: 5px 10px; border-radius: 15px; font-size: 12px;">
+                                    ✅ Present
+                                </span>
+                            </div>
+                        </div>
+                    `;
+                    
+                    resultDiv.style.display = 'block';
+                    feather.replace();
+                    
+                    // Play success sound (optional)
+                    playSuccessSound();
+                    
+                    // Auto hide after 5 seconds
+                    setTimeout(() => {
+                        resultDiv.style.display = 'none';
+                    }, 5000);
+                    
+                } else if (result.success && !result.recognized) {
+                    resultDiv.innerHTML = `
+                        <div class="student-card" style="background: linear-gradient(135deg, #f56565 0%, #ed8936 100%);">
+                            <div style="background-color: white; border-radius: 50%; padding: 10px;">
+                                <i data-feather="user-x" style="width: 40px; height: 40px; color: #f56565;"></i>
+                            </div>
+                            <div class="student-info">
+                                <h5>Face Not Recognized</h5>
+                                <p>Distance: ${result.distance ? result.distance.toFixed(4) : 'N/A'}</p>
+                                <small>Please register the student first</small>
+                            </div>
+                        </div>
+                    `;
+                    
+                    resultDiv.style.display = 'block';
+                    feather.replace();
+                    
+                    // Auto hide after 3 seconds
+                    setTimeout(() => {
+                        resultDiv.style.display = 'none';
+                    }, 3000);
+                }
+            }
+            
+            // View student details
+            window.viewStudentDetails = async function(enrollmentNumber) {
+                try {
+                    const response = await fetch(`${BACKEND_URL}/api/student-attendance/${enrollmentNumber}`);
+                    if (response.ok) {
+                        const data = await response.json();
+                        
+                        if (data.success) {
+                            let summaryText = `<strong>${data.student_name}</strong><br>`;
+                            summaryText += `Enrollment: ${data.enrollment_number}<br>`;
+                            summaryText += `Total Records: ${data.total_attendance_records}<br><br>`;
+                            
+                            summaryText += '<strong>Subject Summary:</strong><br>';
+                            for (const [subject, stats] of Object.entries(data.subject_summary)) {
+                                summaryText += `${subject}: ${stats.present}/${stats.total_classes} (${stats.attendance_percentage}%)<br>`;
+                            }
+                            
+                            Swal.fire({
+                                title: 'Student Attendance Summary',
+                                html: summaryText,
+                                icon: 'info',
+                                confirmButtonText: 'OK'
+                            });
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error viewing student details:', error);
+                }
+            };
+            
+            // Play success sound
+            function playSuccessSound() {
+                try {
+                    const audio = new Audio('data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEAQB8AAEAfAAABAAgAZGF0YQ');
+                    audio.play().catch(() => {});
+                } catch (e) {
+                    // Silent fail if audio not supported
+                }
+            }
+            
+            // Refresh attendance data
+            document.getElementById('refreshAttendance').addEventListener('click', async function() {
+                await loadAttendanceData();
+                showToast('Attendance data refreshed', 'success');
+            });
+            
+            // Export attendance (simplified version)
+            document.getElementById('exportAttendance').addEventListener('click', async function() {
+                const selectedDate = document.getElementById('attendanceDate').value;
+                
+                try {
+                    const response = await fetch(`${BACKEND_URL}/api/get-attendance?date=${selectedDate}`);
+                    if (response.ok) {
+                        const data = await response.json();
+                        
+                        if (data.success && data.attendance.length > 0) {
+                            // Create CSV
+                            let csv = 'Sr No,Student Name,Enrollment No,Status,Subject,Time,Confidence\n';
+                            
+                            data.attendance.forEach((record, index) => {
+                                const time = new Date(record.marked_at || record.time);
+                                csv += `${index + 1},"${record.student_name || 'Unknown'}","${record.enrollment_number}","${record.status || 'present'}","${record.subject || 'General'}","${time.toLocaleTimeString()}","${Math.round((record.confidence || 0) * 100)}%"\n`;
+                            });
+                            
+                            // Download
+                            const blob = new Blob([csv], { type: 'text/csv' });
+                            const url = window.URL.createObjectURL(blob);
+                            const a = document.createElement('a');
+                            a.href = url;
+                            a.download = `attendance_${selectedDate}.csv`;
+                            document.body.appendChild(a);
+                            a.click();
+                            document.body.removeChild(a);
+                            
+                            showToast('Attendance exported successfully', 'success');
+                        } else {
+                            showToast('No data to export', 'warning');
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error exporting attendance:', error);
+                    showToast('Failed to export attendance', 'error');
+                }
+            });
+            
+            // Date filter change
+            document.getElementById('attendanceDate').addEventListener('change', async function() {
+                await loadAttendanceData();
+            });
+            
+            // Show toast notification
+            function showToast(message, type) {
+                const icon = type === 'success' ? 'check-circle' : 
+                            type === 'error' ? 'alert-circle' : 
+                            type === 'warning' ? 'alert-triangle' : 'info';
+                const color = type === 'success' ? '#4CAF50' : 
+                             type === 'error' ? '#f44336' : 
+                             type === 'warning' ? '#FF9800' : '#2196F3';
+                
+                Swal.fire({
+                    icon: type,
+                    title: message,
+                    position: 'top-end',
+                    showConfirmButton: false,
+                    timer: 3000,
+                    toast: true,
+                    background: color,
+                    color: 'white'
+                });
+            }
+            
+            // Initialize status indicators
+            cameraStatus.className = 'status-indicator status-inactive';
+            backendStatus.className = 'status-indicator';
+            modelStatus.className = 'status-indicator';
+            
+            cameraStatusText.textContent = 'Not Started';
+            backendStatusText.textContent = 'Checking...';
+            modelStatusText.textContent = 'Loading...';
+            
+            // Re-initialize feather icons periodically
+            setInterval(() => feather.replace(), 1000);
+        });
+    </script>
+
+    <script>
+// Authentication and Logout Functionality
+document.addEventListener('DOMContentLoaded', function() {
+    checkAuth();
+    setupLogout();
+});
+
+// Check authentication
+async function checkAuth() {
+    try {
+        const response = await fetch("/api/check-session");
+        const result = await response.json();
+        
+        if (!result.logged_in) {
+            // Redirect to login page
+            window.location.href = "/sign-in";
+        } else {
+            // User is logged in, update user info
+            const userElement = document.querySelector('.navbar .text-dark');
+            if (userElement && result.user) {
+                userElement.textContent = result.user.full_name || result.user.username;
+            }
+        }
+    } catch (error) {
+        console.error("Auth check error:", error);
+        window.location.href = "/sign-in";
+    }
+}
+
+// Setup logout functionality
+function setupLogout() {
+    // Sidebar logout link
+    const sidebarLogout = document.getElementById('sidebarLogout');
+    if (sidebarLogout) {
+        sidebarLogout.addEventListener('click', async function(e) {
+            e.preventDefault();
+            await logoutUser();
+        });
+    }
+    
+    // Navbar logout link
+    const navbarLogout = document.querySelector('.dropdown-item:last-child');
+    if (navbarLogout && navbarLogout.textContent.includes('Log out')) {
+        navbarLogout.addEventListener('click', async function(e) {
+            e.preventDefault();
+            await logoutUser();
+        });
+    }
+}
+
+// Logout function
+async function logoutUser() {
+    try {
+        const response = await fetch("/logout");
+        if (response.ok || response.redirected) {
+            window.location.href = "/sign-in";
+        } else {
+            window.location.href = "/sign-in";
+        }
+    } catch (error) {
+        console.error("Logout error:", error);
+        window.location.href = "/sign-in";
+    }
+}
+
+// Also handle direct /logout URL clicks
+document.addEventListener('click', function(e) {
+    if (e.target.closest('a[href="/logout"]')) {
+        e.preventDefault();
+        logoutUser();
+    }
+});
+</script>
+</body>
+</html>

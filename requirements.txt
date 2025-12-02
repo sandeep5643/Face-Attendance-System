@@ -3,15 +3,12 @@ Flask-CORS==4.0.0
 Flask-SQLAlchemy==3.0.5
 Flask-Session==0.5.0
 
-# Face recognition dependencies
+numpy==1.23.5
+opencv-python==4.7.0.72
+
 face-recognition==1.3.0
 face-recognition-models==0.3.0
 
-# Essentials
-numpy==1.24.3
-opencv-python==4.8.1.78
-pillow==10.0.1
+pillow==10.1.0
 
-# Add these 2 if not included
-cmake
-dlib-bin
+gunicorn==21.2.0

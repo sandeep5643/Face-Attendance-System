@@ -4,9 +4,13 @@ services:
     env: python
     plan: free
     region: singapore
-    buildCommand: pip install -r requirements.txt
+    buildCommand: |
+      python -m pip install --upgrade pip
+      pip install setuptools==69.5.1
+      pip install wheel==0.43.0
+      pip install cmake==3.28.3
+      pip install -r requirements.txt
     startCommand: gunicorn app:app
-    disk:
-      name: data
-      mountPath: /opt/render/.mount
-      sizeGB: 1
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.9

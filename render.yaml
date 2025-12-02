@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: face-attendance
+    env: python
+    plan: free
+    region: singapore
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app
+    disk:
+      name: data
+      mountPath: /opt/render/.mount
+      sizeGB: 1

@@ -9,6 +9,7 @@ import pickle
 import numpy as np
 from datetime import datetime, timedelta
 import hashlib
+import pytz  # ✅ ADD THIS LINE
 
 # ========== PROJECT PATHS CONFIGURATION ==========
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -30,7 +31,6 @@ app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(hours=24)
 CORS(app, supports_credentials=True)
 
 # ========== DATABASE SETUP ==========
-# We'll use separate SQLAlchemy instances for different databases
 app.config["SQLALCHEMY_DATABASE_URI"] = f"sqlite:///{DATABASE_PATH}"
 app.config["SQLALCHEMY_BINDS"] = {
     'admin': f"sqlite:///{ADMIN_DB_PATH}"
@@ -40,7 +40,6 @@ app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 db = SQLAlchemy(app)
 
 # ========== DATABASE MODELS ==========
-# We'll handle admin user differently since bind might not work
 class AdminUser(db.Model):
     __bind_key__ = 'admin'
     __tablename__ = 'admin_users'
@@ -90,7 +89,6 @@ def login_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
         if 'user_id' not in session:
-            # Allow access to sign-in page
             if request.endpoint == 'serve_sign_in':
                 return f(*args, **kwargs)
             return redirect(url_for('serve_sign_in'))
@@ -103,14 +101,11 @@ def initialize_admin_user():
     """Create default admin user if not exists"""
     with app.app_context():
         try:
-            # First, create all tables (including admin_users in main database)
             db.create_all()
             
-            # Check if admin user exists
             admin_exists = AdminUser.query.filter_by(username='admin').first()
             
             if not admin_exists:
-                # Create default admin
                 admin = AdminUser(
                     username='admin',
                     email='admin@faceattendance.com',
@@ -131,6 +126,81 @@ def initialize_admin_user():
             print("⚠️ Using simple session-based authentication instead")
 
 
+# ========== DATE & TIME UTILITY FUNCTIONS ==========
+def get_indian_time():
+    """Get current time in Indian timezone (IST)"""
+    try:
+        # Set to Indian timezone
+        ist = pytz.timezone('Asia/Kolkata')
+        now_utc = datetime.now(pytz.utc)
+        now_ist = now_utc.astimezone(ist)
+        return now_ist
+    except:
+        # Fallback to system time if pytz not available
+        return datetime.now()
+
+def get_current_date():
+    """Get current date in YYYY-MM-DD format (IST)"""
+    now_ist = get_indian_time()
+    return now_ist.strftime("%Y-%m-%d")
+
+def get_current_time():
+    """Get current time in HH:MM:SS format (IST)"""
+    now_ist = get_indian_time()
+    return now_ist.strftime("%H:%M:%S")
+
+def parse_date(date_str):
+    """Parse date string to YYYY-MM-DD format"""
+    if not date_str:
+        return get_current_date()
+    
+    try:
+        date_str = str(date_str).strip()
+        print(f"🔍 Parsing date string: '{date_str}'")
+        
+        # Try common date formats
+        date_formats = [
+            "%Y-%m-%d",        # 2025-03-12
+            "%d-%m-%Y",        # 12-03-2025
+            "%m-%d-%Y",        # 03-12-2025
+            "%d/%m/%Y",        # 12/03/2025
+            "%m/%d/%Y",        # 03/12/2025
+            "%d-%m-%y",        # 12-03-25
+            "%m-%d-%y",        # 03-12-25
+            "%d/%m/%y",        # 12/03/25
+            "%m/%d/%y",        # 03/12/25
+            "%Y/%m/%d",        # 2025/03/12
+        ]
+        
+        for fmt in date_formats:
+            try:
+                parsed_date = datetime.strptime(date_str, fmt)
+                # Ensure 4-digit year
+                if parsed_date.year < 100:
+                    if parsed_date.year < 50:
+                        parsed_date = parsed_date.replace(year=parsed_date.year + 2000)
+                    else:
+                        parsed_date = parsed_date.replace(year=parsed_date.year + 1900)
+                
+                result = parsed_date.strftime("%Y-%m-%d")
+                print(f"✅ Parsed '{date_str}' as '{result}' using format '{fmt}'")
+                return result
+            except ValueError:
+                continue
+        
+        # If no format matches, check if it's already in correct format
+        if len(date_str) == 10 and date_str[4] == '-' and date_str[7] == '-':
+            # Already in YYYY-MM-DD format
+            print(f"✅ Date already in YYYY-MM-DD format: {date_str}")
+            return date_str
+        
+        print(f"❌ Could not parse date: '{date_str}'")
+        return get_current_date()
+    except Exception as e:
+        print(f"❌ Error parsing date '{date_str}': {e}")
+        return get_current_date()
+
+
 # ========== MODEL TRAINING FUNCTIONS ==========
 def load_existing_model():
     """Load existing trained model if exists"""
@@ -147,13 +217,30 @@ def load_existing_model():
 
 def save_trained_model(model_data):
     """Save trained model to file"""
-    with open(MODEL_PATH, "wb") as f:
-        pickle.dump(model_data, f)
-    print(f"💾 Model saved with {len(model_data['encodings'])} encodings")
+    try:
+        print(f"💾 Saving model to: {MODEL_PATH}")
+        print(f"   Model has {len(model_data['encodings'])} encodings")
+        
+        with open(MODEL_PATH, "wb") as f:
+            pickle.dump(model_data, f)
+        
+        if os.path.exists(MODEL_PATH):
+            file_size = os.path.getsize(MODEL_PATH)
+            print(f"✅ Model saved successfully ({file_size} bytes)")
+            return True
+        else:
+            print("❌ Model file not found after saving")
+            return False
+            
+    except Exception as e:
+        print(f"❌ Error saving model: {e}")
+        raise
 
 
 def update_model_with_new_student(student_id, enrollment_number, new_encodings):
     """Update trained model with new student's encodings"""
+    print(f"🔄 Updating model with new student: {enrollment_number}")
+    
     model_data = load_existing_model()
     
     for encoding in new_encodings:
@@ -161,27 +248,65 @@ def update_model_with_new_student(student_id, enrollment_number, new_encodings):
         model_data["names"].append(enrollment_number)
         model_data["student_ids"].append(student_id)
     
-    save_trained_model(model_data)
-    return len(new_encodings)
+    if save_trained_model(model_data):
+        print(f"✅ Model updated with {len(new_encodings)} new encodings")
+        return len(new_encodings)
+    return 0
 
 
 def retrain_complete_model():
     """Retrain complete model from all students in database"""
-    with app.app_context():
-        students = Student.query.all()
-        model_data = {"encodings": [], "names": [], "student_ids": []}
-        
-        total_encodings = 0
-        for student in students:
-            face_encodings = FaceEncoding.query.filter_by(student_id=student.id).all()
-            for face in face_encodings:
-                model_data["encodings"].append(face.encoding)
-                model_data["names"].append(student.enrollment_number)
-                model_data["student_ids"].append(student.id)
-                total_encodings += 1
-        
-        save_trained_model(model_data)
-        return total_encodings
+    print("\n" + "="*50)
+    print("🔄 STARTING COMPLETE MODEL RETRAINING")
+    print("="*50)
+    
+    try:
+        with app.app_context():
+            students = Student.query.all()
+            print(f"📊 Found {len(students)} students in database")
+            
+            model_data = {"encodings": [], "names": [], "student_ids": []}
+            total_encodings = 0
+            students_with_faces = 0
+            
+            for idx, student in enumerate(students, 1):
+                print(f"\n[{idx}/{len(students)}] Processing: {student.name} ({student.enrollment_number})")
+                
+                face_encodings = FaceEncoding.query.filter_by(student_id=student.id).all()
+                print(f"   📸 Found {len(face_encodings)} face encodings")
+                
+                if len(face_encodings) > 0:
+                    students_with_faces += 1
+                    
+                    for face_encoding in face_encodings:
+                        model_data["encodings"].append(face_encoding.encoding)
+                        model_data["names"].append(student.enrollment_number)
+                        model_data["student_ids"].append(student.id)
+                        total_encodings += 1
+                else:
+                    print(f"   ⚠️ No face encodings found for this student")
+            
+            print(f"\n📈 RETRAINING SUMMARY:")
+            print(f"   • Total students processed: {len(students)}")
+            print(f"   • Students with face data: {students_with_faces}")
+            print(f"   • Total face encodings collected: {total_encodings}")
+            
+            if total_encodings > 0:
+                if save_trained_model(model_data):
+                    print(f"✅ Model retraining completed successfully!")
+                else:
+                    print(f"❌ Failed to save model file")
+            else:
+                print(f"⚠️ No encodings found - model not saved")
+            
+            print("="*50)
+            return total_encodings
+            
+    except Exception as e:
+        print(f"\n❌ ERROR in retrain_complete_model: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return 0
 
 
 # =======================================================
@@ -201,12 +326,7 @@ def login():
                 "message": "Username and password are required"
             }), 400
         
-        # SIMPLIFIED AUTHENTICATION - Using fixed admin credentials
-        # In production, you should use database-based authentication
-        
-        # Check for default admin credentials
         if username == 'admin' and password == 'admin123':
-            # Create session with admin data
             session['user_id'] = 1
             session['username'] = 'admin'
             session['email'] = 'admin@faceattendance.com'
@@ -226,18 +346,15 @@ def login():
                 }
             })
         
-        # Try to find user in database (if AdminUser table exists)
         try:
             user = AdminUser.query.filter(
                 (AdminUser.username == username) | (AdminUser.email == username)
             ).first()
             
             if user and user.check_password(password):
-                # Update last login
                 user.last_login = datetime.utcnow()
                 db.session.commit()
                 
-                # Create session
                 session['user_id'] = user.id
                 session['username'] = user.username
                 session['email'] = user.email
@@ -257,9 +374,8 @@ def login():
                     }
                 })
         except:
-            pass  # If AdminUser table doesn't exist, fall back to default
+            pass
         
-        # If no user found
         return jsonify({
             "status": "error",
             "message": "Invalid username or password"
@@ -308,55 +424,41 @@ def logout():
 @app.route('/')
 @login_required
 def home():
-    """Serve main index page (protected)"""
     return send_from_directory('static', 'index.html')
-
 
 @app.route('/dashboard')
 @login_required
 def serve_dashboard():
-    """Serve dashboard page (protected)"""
     return send_from_directory('static', 'index.html')
-
 
 @app.route('/mark-attendance')
 @login_required
 def serve_mark_attendance():
-    """Serve mark attendance page (protected)"""
     return send_from_directory('static', 'mark-attendance.html')
-
 
 @app.route('/register-student')
 @login_required
 def serve_register_student():
-    """Serve register student page (protected)"""
     return send_from_directory('static', 'register-student.html')
-
 
 @app.route('/sign-in')
 def serve_sign_in():
-    """Serve sign in page (public)"""
-    # If already logged in, redirect to dashboard
     if 'user_id' in session:
         return redirect(url_for('serve_dashboard'))
     return send_from_directory('static', 'sign-in.html')
 
-
 @app.route('/view-students')
 @login_required
 def serve_view_students():
-    """Serve view students page (protected)"""
     return send_from_directory('static', 'view-student.html')
-
 
 @app.route('/<path:filename>')
 def serve_static_files(filename):
-    """Serve all static files (CSS, JS, images)"""
     return send_from_directory('static', filename)
 
 
 # =======================================================
-#   API: REGISTER STUDENT (WITH AUTO TRAINING)
+#   API: REGISTER STUDENT (WITH AUTO TRAINING) - FIXED
 # =======================================================
 @app.route("/api/register-student", methods=["POST"])
 @login_required
@@ -378,9 +480,17 @@ def register_student():
         if existing_student:
             return jsonify({"success": False, "message": "Enrollment already exists"}), 400
 
-        student = Student(name=name, enrollment_number=enrollment)
+        # ✅ FIXED: Use Indian time for created_at
+        current_time = get_indian_time()
+        student = Student(
+            name=name, 
+            enrollment_number=enrollment,
+            created_at=current_time  # ✅ Indian time
+        )
         db.session.add(student)
         db.session.commit()
+
+        print(f"✅ Student registered: {name} ({enrollment}) at {current_time}")
 
         student_folder = os.path.join(STUDENTS_DIR, enrollment)
         os.makedirs(student_folder, exist_ok=True)
@@ -429,7 +539,8 @@ def register_student():
             "message": f"Student registered successfully. Model updated with {successful_encodings} face encodings.",
             "student_id": student.id,
             "encodings_added": successful_encodings,
-            "model_updated": True
+            "model_updated": True,
+            "registration_time": current_time.strftime("%Y-%m-%d %H:%M:%S")  # ✅ Send back time for debugging
         })
         
     except Exception as e:
@@ -444,102 +555,82 @@ def register_student():
 @app.route("/api/retrain-model", methods=["POST"])
 @login_required
 def retrain_model():
+    """Retrain the complete face recognition model"""
+    print("\n🎯 MANUAL MODEL RETRAINING REQUESTED")
+    print("="*40)
+    
     try:
+        with app.app_context():
+            total_students = Student.query.count()
+            total_encodings_db = FaceEncoding.query.count()
+            
+            print(f"📊 Database Status:")
+            print(f"   • Total students: {total_students}")
+            print(f"   • Total face encodings in DB: {total_encodings_db}")
+            
+            if total_encodings_db == 0:
+                return jsonify({
+                    "success": False, 
+                    "message": "No face encodings found in database. Please register students first."
+                }), 400
+        
+        print(f"\n🔄 Starting model retraining...")
         total_encodings = retrain_complete_model()
-        return jsonify({
-            "success": True,
-            "message": f"Model retrained successfully with {total_encodings} encodings",
-            "total_encodings": total_encodings
-        })
+        
+        if os.path.exists(MODEL_PATH):
+            model_data = load_existing_model()
+            print(f"\n✅ VERIFICATION:")
+            print(f"   • Model file exists: {os.path.exists(MODEL_PATH)}")
+            print(f"   • Encodings in model: {len(model_data['encodings'])}")
+            
+            return jsonify({
+                "success": True,
+                "message": f"✅ Model retrained successfully with {total_encodings} encodings",
+                "total_encodings": total_encodings,
+                "model_file_exists": True,
+                "encodings_count": len(model_data['encodings'])
+            })
+        else:
+            print(f"❌ Model file not created")
+            return jsonify({
+                "success": False,
+                "message": "Model file was not created"
+            }), 500
+            
     except Exception as e:
+        print(f"\n❌ ERROR in retrain_model API: {str(e)}")
+        import traceback
+        traceback.print_exc()
         return jsonify({"success": False, "message": f"Retraining failed: {str(e)}"}), 500
 
 
 @app.route("/api/model-status", methods=["GET"])
 @login_required
 def model_status():
+    """Check current model status"""
     try:
         model_data = load_existing_model()
+        
         with app.app_context():
             student_count = Student.query.count()
+            encoding_count_db = FaceEncoding.query.count()
         
         return jsonify({
             "success": True,
-            "model_exists": len(model_data["encodings"]) > 0,
+            "model_exists": os.path.exists(MODEL_PATH),
+            "model_has_data": len(model_data["encodings"]) > 0,
             "total_students": student_count,
             "total_encodings": len(model_data["encodings"]),
-            "unique_students_in_model": len(set(model_data["student_ids"])) if model_data.get("student_ids") else 0
+            "encodings_in_database": encoding_count_db,
+            "unique_students_in_model": len(set(model_data["student_ids"])) if model_data.get("student_ids") else 0,
+            "model_file_size": os.path.getsize(MODEL_PATH) if os.path.exists(MODEL_PATH) else 0
         })
     except Exception as e:
         return jsonify({"success": False, "message": f"Error checking model: {str(e)}"}), 500
 
 
-@app.route("/api/test-recognition", methods=["POST"])
-@login_required
-def test_recognition():
-    try:
-        model_data = load_existing_model()
-        
-        if len(model_data["encodings"]) == 0:
-            return jsonify({"success": False, "message": "No trained model found"}), 400
-        
-        data = request.get_json()
-        test_image = data.get("face_image")
-        
-        if not test_image:
-            return jsonify({"success": False, "message": "No test image provided"}), 400
-        
-        img_data = test_image.split(",")[1] if "," in test_image else test_image
-        img_bytes = base64.b64decode(img_data)
-        
-        temp_path = os.path.join(BASE_DIR, "temp_test.jpg")
-        with open(temp_path, "wb") as f:
-            f.write(img_bytes)
-        
-        test_image_np = face_recognition.load_image_file(temp_path)
-        test_encodings = face_recognition.face_encodings(test_image_np)
-        
-        if len(test_encodings) == 0:
-            if os.path.exists(temp_path):
-                os.remove(temp_path)
-            return jsonify({"success": False, "message": "No face found in test image"}), 400
-        
-        test_encoding = test_encodings[0]
-        
-        face_distances = face_recognition.face_distance(model_data["encodings"], test_encoding)
-        
-        best_match_index = np.argmin(face_distances)
-        best_distance = face_distances[best_match_index]
-        best_match_name = model_data["names"][best_match_index]
-        best_match_student_id = model_data["student_ids"][best_match_index]
-        
-        student = None
-        with app.app_context():
-            student = Student.query.get(best_match_student_id)
-        
-        if os.path.exists(temp_path):
-            os.remove(temp_path)
-        
-        return jsonify({
-            "success": True,
-            "recognized": best_distance < 0.6,
-            "student_name": student.name if student else None,
-            "enrollment_number": best_match_name,
-            "confidence": 1 - best_distance,
-            "distance": float(best_distance),
-            "threshold": 0.6
-        })
-        
-    except Exception as e:
-        temp_path = os.path.join(BASE_DIR, "temp_test.jpg")
-        if os.path.exists(temp_path):
-            os.remove(temp_path)
-        print(f"❌ Recognition error: {str(e)}")
-        return jsonify({"success": False, "message": f"Recognition test failed: {str(e)}"}), 500
-
-
 # =======================================================
-#   API: MARK ATTENDANCE (REAL-TIME FACE RECOGNITION)
+#   API: MARK ATTENDANCE (REAL-TIME FACE RECOGNITION) - FIXED
 # =======================================================
 @app.route("/api/mark-attendance", methods=["POST"])
 @login_required
@@ -548,12 +639,23 @@ def mark_attendance():
         data = request.get_json()
         
         subject = data.get("subject", "General")
-        date = data.get("date", datetime.now().strftime("%Y-%m-%d"))
-        time = data.get("time", datetime.now().strftime("%H:%M:%S"))
+        date = data.get("date")
+        time = data.get("time")
         face_image = data.get("face_image")
         
         if not face_image:
             return jsonify({"success": False, "message": "No face image provided"}), 400
+        
+        # ✅ FIXED: Always use Indian time
+        if not date:
+            date = get_current_date()  # Indian date
+        else:
+            date = parse_date(date)
+        
+        if not time:
+            time = get_current_time()  # Indian time
+        
+        print(f"📅 Marking attendance: date={date}, time={time}, subject={subject}")
         
         model_data = load_existing_model()
         
@@ -592,16 +694,50 @@ def mark_attendance():
                 student = Student.query.get(student_id)
                 
                 if student:
+                    # Check if attendance already marked for today for this subject
+                    existing_attendance = Attendance.query.filter(
+                        Attendance.student_id == student.id,
+                        Attendance.date == date,
+                        Attendance.subject == subject
+                    ).first()
+                    
+                    if existing_attendance:
+                        if os.path.exists(temp_path):
+                            os.remove(temp_path)
+                        return jsonify({
+                            "success": True,
+                            "recognized": True,
+                            "already_marked": True,
+                            "message": f"Attendance already marked for {student.name} today in {subject}",
+                            "attendance_record": {
+                                "student_id": student.id,
+                                "student_name": student.name,
+                                "enrollment_number": student.enrollment_number,
+                                "subject": subject,
+                                "date": date,
+                                "time": time,
+                                "confidence": float(1 - best_distance),
+                                "distance": float(best_distance),
+                                "status": "Present"
+                            }
+                        })
+                    
+                    # ✅ FIXED: Use current Indian time for marked_at
+                    current_time_ist = get_indian_time()
+                    
                     attendance = Attendance(
                         student_id=student.id,
                         subject=subject,
                         date=date,
                         time=time,
+                        marked_at=current_time_ist,  # ✅ Indian time
                         confidence=float(1 - best_distance),
                         status="Present"
                     )
                     db.session.add(attendance)
                     db.session.commit()
+                    
+                    print(f"✅ Attendance marked: {student.name} at {time} on {date}")
                     
                     attendance_record = {
                         "student_id": student.id,
@@ -612,7 +748,8 @@ def mark_attendance():
                         "time": time,
                         "confidence": float(1 - best_distance),
                         "distance": float(best_distance),
-                        "status": "Present"
+                        "status": "Present",
+                        "marked_at": current_time_ist.strftime("%Y-%m-%d %H:%M:%S")  # ✅ Add for debugging
                     }
                     
                     if os.path.exists(temp_path):
@@ -621,6 +758,7 @@ def mark_attendance():
                     return jsonify({
                         "success": True,
                         "recognized": True,
+                        "already_marked": False,
                         "message": f"Attendance marked for {student.name}",
                         "attendance_record": attendance_record
                     })
@@ -648,7 +786,7 @@ def mark_attendance():
 
 
 # =======================================================
-#   API: GET ATTENDANCE RECORDS (FOR DASHBOARD)
+#   API: GET ATTENDANCE RECORDS (FOR DASHBOARD) - FIXED
 # =======================================================
 @app.route("/api/get-attendance", methods=["GET"])
 @login_required
@@ -659,6 +797,11 @@ def get_attendance():
         limit = request.args.get('limit', default=10, type=int)
         date_filter = request.args.get('date')
         student_id = request.args.get('student_id')
+        
+        # ✅ FIXED: Always parse date to YYYY-MM-DD format
+        if date_filter:
+            date_filter = parse_date(date_filter)
+            print(f"🔍 Getting attendance for date: {date_filter}")
         
         # Build query
         query = Attendance.query.join(Student).order_by(Attendance.marked_at.desc())
@@ -676,6 +819,17 @@ def get_attendance():
         # Format response
         attendance_list = []
         for record in attendance_records:
+            # ✅ FIXED: Convert marked_at to Indian time for display
+            marked_at_local = None
+            if record.marked_at:
+                try:
+                    # Convert UTC to IST
+                    utc_time = record.marked_at.replace(tzinfo=pytz.utc)
+                    ist = pytz.timezone('Asia/Kolkata')
+                    marked_at_local = utc_time.astimezone(ist)
+                except:
+                    marked_at_local = record.marked_at
+            
             attendance_list.append({
                 'id': record.id,
                 'student_id': record.student_id,
@@ -686,18 +840,22 @@ def get_attendance():
                 'time': record.time,
                 'confidence': record.confidence,
                 'status': record.status,
-                'marked_at': record.marked_at.isoformat() if record.marked_at else None
+                'marked_at': marked_at_local.isoformat() if marked_at_local else None,
+                'marked_at_local': marked_at_local.strftime("%Y-%m-%d %H:%M:%S") if marked_at_local else None
             })
         
-        # Get today's attendance count
-        today = datetime.now().strftime("%Y-%m-%d")
+        # Get today's attendance count (always in YYYY-MM-DD)
+        today = get_current_date()
         today_count = Attendance.query.filter(Attendance.date == today).count()
+        
+        print(f"📊 Today's attendance ({today}): {today_count} records")
         
         return jsonify({
             'success': True,
             'attendance': attendance_list,
             'total_records': len(attendance_list),
-            'today_records': today_count
+            'today_records': today_count,
+            'today_date': today
         })
         
     except Exception as e:
@@ -711,7 +869,7 @@ def get_attendance():
 
 
 # =======================================================
-#   API: GET STUDENTS LIST
+#   API: GET STUDENTS LIST - FIXED
 # =======================================================
 @app.route("/api/get-students", methods=["GET"])
 @login_required
@@ -722,17 +880,26 @@ def get_students():
         
         students_list = []
         for student in students:
-            # Count face encodings for this student
             face_count = FaceEncoding.query.filter_by(student_id=student.id).count()
-            
-            # Count attendance records
             attendance_count = Attendance.query.filter_by(student_id=student.id).count()
+            
+            # ✅ FIXED: Convert created_at to Indian time
+            created_at_local = None
+            if student.created_at:
+                try:
+                    utc_time = student.created_at.replace(tzinfo=pytz.utc)
+                    ist = pytz.timezone('Asia/Kolkata')
+                    created_at_local = utc_time.astimezone(ist)
+                except:
+                    created_at_local = student.created_at
             
             students_list.append({
                 'id': student.id,
                 'name': student.name,
                 'enrollment_number': student.enrollment_number,
                 'created_at': student.created_at.isoformat() if student.created_at else None,
+                'created_at_local': created_at_local.strftime("%Y-%m-%d %H:%M:%S") if created_at_local else None,
+                'created_at_display': created_at_local.strftime("%d/%m/%Y %I:%M %p") if created_at_local else None,
                 'has_face_images': face_count > 0,
                 'face_encodings_count': face_count,
                 'total_attendance': attendance_count,
@@ -755,7 +922,7 @@ def get_students():
 
 
 # =======================================================
-#   API: GET SINGLE STUDENT DETAILS
+#   API: GET SINGLE STUDENT DETAILS - FIXED
 # =======================================================
 @app.route("/api/get-student/<int:student_id>", methods=["GET"])
 @login_required
@@ -764,17 +931,22 @@ def get_student(student_id):
     try:
         student = Student.query.get_or_404(student_id)
         
-        # Get face encodings count
         face_count = FaceEncoding.query.filter_by(student_id=student.id).count()
-        
-        # Get attendance count
         attendance_count = Attendance.query.filter_by(student_id=student.id).count()
         
-        # Check if student folder exists
+        # ✅ FIXED: Convert created_at to Indian time
+        created_at_local = None
+        if student.created_at:
+            try:
+                utc_time = student.created_at.replace(tzinfo=pytz.utc)
+                ist = pytz.timezone('Asia/Kolkata')
+                created_at_local = utc_time.astimezone(ist)
+            except:
+                created_at_local = student.created_at
+        
         student_folder = os.path.join(STUDENTS_DIR, student.enrollment_number)
         folder_exists = os.path.exists(student_folder)
         
-        # Get preview of face images
         face_images_preview = []
         if folder_exists:
             try:
@@ -792,10 +964,12 @@ def get_student(student_id):
             'name': student.name,
             'enrollment_number': student.enrollment_number,
             'created_at': student.created_at.isoformat() if student.created_at else None,
+            'created_at_local': created_at_local.strftime("%Y-%m-%d %H:%M:%S") if created_at_local else None,
+            'created_at_display': created_at_local.strftime("%d/%m/%Y %I:%M %p") if created_at_local else None,
             'face_encodings_count': face_count,
             'total_attendance_records': attendance_count,
             'folder_exists': folder_exists,
-            'face_images_preview': face_images_preview[:3]  # Limit to 3 preview images
+            'face_images_preview': face_images_preview[:3]
         }
         
         return jsonify({
@@ -857,24 +1031,17 @@ def delete_student(student_id):
         student = Student.query.get_or_404(student_id)
         enrollment_number = student.enrollment_number
         
-        # Delete face encodings from database
         FaceEncoding.query.filter_by(student_id=student_id).delete()
-        
-        # Delete attendance records
         Attendance.query.filter_by(student_id=student_id).delete()
-        
-        # Delete student from database
         db.session.delete(student)
         db.session.commit()
         
-        # Delete student folder
         student_folder = os.path.join(STUDENTS_DIR, enrollment_number)
         if os.path.exists(student_folder):
             import shutil
             shutil.rmtree(student_folder)
             print(f"🗑️ Deleted student folder: {student_folder}")
         
-        # Retrain model to remove student's encodings
         retrain_complete_model()
         
         return jsonify({
@@ -891,12 +1058,54 @@ def delete_student(student_id):
         }), 500
 
 
-
-
 # =======================================================
-#   OTHER PROTECTED APIs
+#   API: VERIFY MODEL
 # =======================================================
-# [Your existing API routes...]
+@app.route("/api/verify-model", methods=["GET"])
+@login_required
+def verify_model():
+    """Verify model integrity"""
+    try:
+        model_exists = os.path.exists(MODEL_PATH)
+        model_size = os.path.getsize(MODEL_PATH) if model_exists else 0
+        
+        model_data = None
+        encodings_count = 0
+        if model_exists:
+            try:
+                with open(MODEL_PATH, "rb") as f:
+                    model_data = pickle.load(f)
+                encodings_count = len(model_data.get('encodings', []))
+            except:
+                pass
+        
+        with app.app_context():
+            db_students = Student.query.count()
+            db_encodings = FaceEncoding.query.count()
+        
+        return jsonify({
+            "success": True,
+            "model": {
+                "file_exists": model_exists,
+                "file_size": model_size,
+                "encodings_count": encodings_count,
+                "is_valid": model_data is not None
+            },
+            "database": {
+                "students_count": db_students,
+                "encodings_count": db_encodings
+            },
+            "paths": {
+                "model_path": MODEL_PATH,
+                "server_dir": SERVER_DIR,
+                "students_dir": STUDENTS_DIR
+            },
+            "current_time_ist": get_indian_time().strftime("%Y-%m-%d %H:%M:%S")
+        })
+        
+    except Exception as e:
+        return jsonify({"success": False, "message": str(e)}), 500
+
 
 # =======================================================
 #   INITIALIZE SYSTEM
@@ -907,25 +1116,46 @@ def initialize_system():
     print("🎯 FACE ATTENDANCE MANAGEMENT SYSTEM")
     print("=" * 50)
     
+    # Install pytz if not available
+    try:
+        import pytz
+        print("✅ pytz timezone library loaded")
+    except ImportError:
+        print("⚠️ pytz not installed. Installing...")
+        import subprocess
+        import sys
+        subprocess.check_call([sys.executable, "-m", "pip", "install", "pytz"])
+        import pytz
+        print("✅ pytz installed successfully")
+    
     with app.app_context():
-        # Create all tables
         db.create_all()
-        
-        # Initialize admin user (simplified)
         initialize_admin_user()
         
-        # Check model status
         model_data = load_existing_model()
         student_count = Student.query.count()
+        encoding_count = FaceEncoding.query.count()
+        
+        current_time_ist = get_indian_time()
         
         print(f"📊 System Initialization:")
         print(f"   • Base Directory: {BASE_DIR}")
         print(f"   • Server Directory: {SERVER_DIR}")
         print(f"   • Database: {'✅ Connected' if student_count >= 0 else '❌ Error'}")
         print(f"   • Total Students in DB: {student_count}")
+        print(f"   • Total Face Encodings in DB: {encoding_count}")
         print(f"   • Total Encodings in Model: {len(model_data['encodings'])}")
         print(f"   • Model File: {'✅ Exists' if os.path.exists(MODEL_PATH) else '⚠️ Not found'}")
         print(f"   • Authentication: ✅ Ready (admin/admin123)")
+        print(f"   • Current Time (IST): {current_time_ist.strftime('%Y-%m-%d %H:%M:%S')}")
+        
+        if encoding_count > 0 and len(model_data['encodings']) == 0:
+            print(f"\n🔄 Initial model training needed...")
+            try:
+                total_encodings = retrain_complete_model()
+                print(f"✅ Initial model trained with {total_encodings} encodings")
+            except Exception as e:
+                print(f"❌ Initial model training failed: {e}")
     
     print("\n🔐 Login required to access the system")
     print("📌 Default credentials: admin / admin123")

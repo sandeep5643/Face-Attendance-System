@@ -10,7 +10,8 @@
     <meta name="keywords" content="login, sign in, authentication, admin">
 
     <link rel="preconnect" href="https://fonts.gstatic.com">
-    <link rel="shortcut icon" href="img/icons/icon-48x48.png" />
+    <link rel="shortcut icon" href="static/img/super ai.png" />
+
 
     <title>Sign In - Face Attendance System</title>
 
@@ -55,17 +56,25 @@
         }
         
         .login-logo {
-            width: 80px;
-            height: 80px;
+            width: 90px;
+            height: 90px;
             background-color: white;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
             margin: 0 auto 20px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+            overflow: hidden; /* 🔥 important */
         }
-        
+
+        .login-logo img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;   
+            border-radius: 50%;
+        }
+                
         .login-logo i {
             color: #4f46e5;
             width: 40px;
@@ -403,11 +412,14 @@
     <div class="login-container">
         <div class="login-card">
             <div class="login-header">
-                <div class="login-logo">
+                <!-- <div class="login-logo">
                     <i data-feather="lock"></i>
+                </div> -->
+                <div class="login-logo">
+                    <img src="/static/img/Super AIP.jpg" alt="Super AIP Logo">
                 </div>
                 <h1>Welcome Back</h1>
-                <p>Sign in to your Face Attendance System</p>
+                <p>Sign in to your Super Aip</p>
             </div>
             
             <div class="login-body">
